@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Auf GitHub Pages gibt es keine Server-Header: CSP hier. Ersetze die API-Adresse durch deine! -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.deine-domain.de; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
+<title>Koffein Rechner</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><h1>☕ Koffein Rechner</h1><div id="userbox" hidden><span id="who"></span> <button id="logout" class="ghost">Abmelden</button></div></header>
+
+<main id="auth-view">
+  <section class="card" id="card-login">
+    <h2 id="auth-title">Anmelden</h2>
+    <form id="auth-form">
+      <label id="email-row" hidden>E-Mail <input id="e" type="email" maxlength="254" autocomplete="email"></label>
+      <label>Benutzername <input id="u" required minlength="3" maxlength="20" autocomplete="username"></label>
+      <label>Passwort <input id="p" type="password" required minlength="10" maxlength="72" autocomplete="current-password"></label>
+      <input id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p id="auth-msg" role="alert"></p>
+      <button type="submit" id="auth-btn">Anmelden</button>
+    </form>
+    <button id="toggle" class="ghost">Noch kein Konto? Registrieren</button>
+    <button id="forgot-link" class="ghost">Passwort vergessen?</button>
+    <p class="hint">Dein Benutzername ist im Leaderboard sichtbar. Verwende keinen echten Namen. Deine E-Mail sieht niemand.</p>
+  </section>
+  <section class="card" id="card-forgot" hidden>
+    <h2>Passwort zurücksetzen</h2>
+    <form id="forgot-form">
+      <label>E-Mail <input id="fe" type="email" required maxlength="254" autocomplete="email"></label>
+      <p id="forgot-msg" role="alert"></p>
+      <button type="submit">Link senden</button>
+    </form>
+    <button class="ghost back">Zurück</button>
+  </section>
+  <section class="card" id="card-reset" hidden>
+    <h2>Neues Passwort</h2>
+    <form id="reset-form">
+      <label>Neues Passwort (min. 10 Zeichen) <input id="rp" type="password" required minlength="10" maxlength="72" autocomplete="new-password"></label>
+      <p id="reset-msg" role="alert"></p>
+      <button type="submit">Passwort speichern</button>
+    </form>
+  </section>
+</main>
+
+<main id="app-view" hidden>
+  <nav>
+    <button data-tab="dash" class="active">Dashboard</button>
+    <button data-tab="board">Leaderboard</button>
+    <button data-tab="suggest">Vorschlag</button>
+    <button data-tab="account">Konto</button>
+  </nav>
+
+  <section id="tab-dash" class="tab">
+    <div class="card">
+      <h2>Was hast du getrunken?</h2>
+      <select id="drink"></select>
+      <p id="preview" class="hint"></p>
+      <button id="add">Hinzufügen</button>
+    </div>
+    <div class="card">
+      <h2>Heute</h2>
+      <div class="stats"><div><b id="total">0</b><span>mg getrunken</span></div><div><b id="remaining">400</b><span>mg noch möglich</span></div></div>
+      <div class="bar"><div id="fill"></div></div>
+      <p id="warn" class="err"></p>
+      <ul id="list" class="list"></ul>
+    </div>
+    <p class="hint">Richtwert: max. 400 mg/Tag für gesunde Erwachsene (EFSA). Das ist keine medizinische Beratung.</p>
+  </section>
+
+  <section id="tab-board" class="tab" hidden>
+    <div class="card">
+      <div class="seg"><button data-p="day" class="active">Heute</button><button data-p="week">Woche</button><button data-p="month">Monat</button></div>
+      <ol id="board" class="list"></ol>
+    </div>
+  </section>
+
+  <section id="tab-suggest" class="tab" hidden>
+    <div class="card">
+      <h2>Getränk vorschlagen</h2>
+      <form id="sg-form">
+        <label>Name <input id="sg-name" required maxlength="60"></label>
+        <label>Portion (z. B. 250 ml) <input id="sg-portion" maxlength="30"></label>
+        <label>Koffein in mg (optional) <input id="sg-mg" type="number" min="0" max="1000"></label>
+        <p id="sg-msg" role="status"></p>
+        <button type="submit">Vorschlag senden</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="tab-account" class="tab" hidden>
+    <div class="card">
+      <h2>Konto löschen</h2>
+      <p class="hint">Löscht dein Konto, deine E-Mail und alle deine Einträge unwiderruflich.</p>
+      <form id="del-form">
+        <label>Zur Bestätigung Passwort eingeben <input id="del-pw" type="password" required autocomplete="current-password"></label>
+        <p id="del-msg" role="alert"></p>
+        <button type="submit" class="danger">Konto endgültig löschen</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<div id="loader" hidden>
+  <div class="loader-box"><div class="spinner"></div><h3>Wusstest du?</h3><p id="fact"></p></div>
+</div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
