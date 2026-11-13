@@ -469,6 +469,14 @@ html.chaos #eq{display:flex}
 @keyframes eq{from{transform:scaleY(.12)}to{transform:scaleY(var(--m,1))}}
 .confetti{position:absolute;top:-16px;width:9px;height:14px;pointer-events:none;background:hsl(var(--hh) 100% 60%);animation:fall var(--t,2.6s) linear forwards}
 
+/* Show reagiert auf die Musik (Werte setzt chaos.js; ohne Analyse laufen die Takt-Animationen oben weiter) */
+html.react #bg .s1{animation:none;opacity:calc(var(--f1,0)*.36)}
+html.react #bg .s2{animation:none;opacity:calc(var(--f2,0)*.36)}
+html.react .laser{opacity:calc(.2 + var(--mid,0)*.8);scale:calc(1 + var(--bass,0)*2.2) 1}
+html.react .spot{opacity:calc(.18 + var(--bass,0)*.6);scale:calc(.8 + var(--bass,0)*.45)}
+html.react .disco{scale:calc(1 + var(--bass,0)*.3)}
+html.react #eq i{animation:none}
+
 /* "weniger Bewegung" im System (oder nicht überschrieben): Animationen aus */
 html.reduce *,html.reduce *::before,html.reduce *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 html.reduce .cup-svg .steam path{opacity:.35}

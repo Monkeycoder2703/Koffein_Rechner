@@ -45,6 +45,38 @@ const Chaos = (() => {
     const eq = $('eq'); if (eq && !eq.childElementCount) for (let i = 0; i < 28; i++) { const e = document.createElement('i'); e.style.setProperty('--m', (.35 + Math.random() * .65).toFixed(2)); e.style.setProperty('--dl', -Math.random() * .6 + 's'); eq.append(e); }
   }
 
+  /* ---- Show reagiert auf die Musik ---- */
+  let raf = 0, lastT = 0, reactive = false, buf = null, avg = 0, lastBeat = 0, beatN = 0, f = [0, 0], sm = { b: 0, m: 0 }, cups = [];
+  function onBeat() {
+    f[beatN % 2] = 1; beatN++;
+    if (beatN % 2 === 0) bolt();
+    for (let k = 0; k < 5; k++) confetti();
+  }
+  function loop(ts) {
+    raf = requestAnimationFrame(loop);
+    if (ts - lastT < 30) return; lastT = ts;
+    const A = synth ? synth.an : (audio && audio._r ? man : null);
+    if (!A) { if (reactive) { reactive = false; root.classList.remove('react'); } return; }
+    if (!reactive) { reactive = true; root.classList.add('react'); cups = [...document.querySelectorAll('.cup,.hero-cup')]; }
+    if (!buf || buf.length !== A.frequencyBinCount) buf = new Uint8Array(A.frequencyBinCount);
+    A.getByteFrequencyData(buf);
+    const rng = (a, b) => { let x = 0; for (let i = a; i < b; i++) x += buf[i]; return x / ((b - a) * 255); };
+    const bass = rng(1, 5), mid = rng(5, 40);
+    sm.b = Math.max(bass, sm.b * .82); sm.m = Math.max(mid, sm.m * .86);
+    avg = avg * .95 + bass * .05;
+    if (bass > avg * 1.2 && bass > .3 && ts - lastBeat > 360) { lastBeat = ts; onBeat(); } // mindestens 360 ms Abstand: nie mehr als 3 Blitze pro Sekunde
+    f[0] *= .8; f[1] *= .8;
+    const F = fx(), B = $('bg'), Q = $('eq');
+    F.style.setProperty('--bass', sm.b.toFixed(3)); F.style.setProperty('--mid', sm.m.toFixed(3));
+    B.style.setProperty('--f1', f[0].toFixed(3)); B.style.setProperty('--f2', f[1].toFixed(3));
+    if (Q) { const bars = Q.children, n = bars.length; for (let i = 0; i < n; i++) { const v = buf[1 + Math.floor(Math.pow(i / n, 1.6) * 120)] / 255; bars[i].style.transform = 'scaleY(' + (.08 + v * .92).toFixed(2) + ')'; } }
+    const sc = (1 + sm.b * .14).toFixed(3); cups.forEach((c) => { c.style.scale = sc; });
+  }
+  function stopReact() {
+    cancelAnimationFrame(raf); raf = 0; reactive = false; root.classList.remove('react'); cups.forEach((c) => { c.style.scale = ''; }); cups = [];
+    const Q = $('eq'); if (Q) [...Q.children].forEach((b) => { b.style.transform = ''; }); sm = { b: 0, m: 0 }; f = [0, 0];
+  }
+
   /* ---- Musik ---- */
   function setNow(txt) { $('np').textContent = t('now_playing') + txt; }
   /* Playlists: music/playlist.json = {playlists:[{id,name,tracks:[{title,file}]}]}. Die NSFW-Playlist liegt verschlüsselt in music/n/ und braucht den Code. */
@@ -105,11 +137,26 @@ const Chaos = (() => {
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, nsfwKey, buf.slice(12));
     return URL.createObjectURL(new Blob([plain], { type: 'audio/mpeg' }));
   }
+  /* Audio-Analyse: Musik -> Analyser -> Lautstärke -> Lautsprecher. Der Analyser sitzt vor der Stummschaltung, die Show läuft also auch bei Mute weiter. */
+  let mctx = null, mgain = null, man = null;
+  function ensureMedia() {
+    if (mctx) return true;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+    try {
+      mctx = new AC(); mgain = mctx.createGain(); mgain.gain.value = muted ? 0 : .85; man = mctx.createAnalyser(); man.fftSize = 1024; man.smoothingTimeConstant = .6;
+      man.connect(mgain); mgain.connect(mctx.destination);
+    } catch { mctx = null; return false; }
+    return true;
+  }
   async function playTrack() {
     const tr = tracks[ti % tracks.length], my = session;
-    if (audio) { audio.pause(); audio.onended = null; audio.onerror = null; }
+    if (audio) { audio.pause(); audio.onended = null; audio.onerror = null; try { if (audio._src) audio._src.disconnect(); } catch { /* egal */ } }
     if (urlNow) { URL.revokeObjectURL(urlNow); urlNow = null; }
     const au = new Audio(); audio = au; au.volume = .85; au.muted = muted;
+    if (ensureMedia()) {
+      if (mctx.resume) mctx.resume().catch(() => {});
+      if (mctx.state === 'running') { try { au._src = mctx.createMediaElementSource(au); au._src.connect(man); au._r = true; au.volume = 1; au.muted = false; } catch { au._r = false; } }
+    }
     const next = () => { ti++; if (on && my === session && audio === au) playTrack(); };
     au.onended = next; au.onerror = () => { if (ti < tracks.length * 2) next(); };
     setNow(tr.title); setBeat(tr.bpm || 128);
@@ -123,15 +170,16 @@ const Chaos = (() => {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     const ctx = new AC(), master = ctx.createGain(), comp = ctx.createDynamicsCompressor(); if (ctx.resume) ctx.resume();
     master.gain.value = muted ? 0 : .32; master.connect(comp); comp.connect(ctx.destination);
+    const bus = ctx.createGain(), an = ctx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = .6; bus.connect(an); bus.connect(master);
     const noise = ctx.createBuffer(1, ctx.sampleRate / 2, ctx.sampleRate), nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     const step = 60 / 150 / 4, roots = [55, 55, 65.41, 49], scale = [220, 261.63, 329.63, 392, 440, 523.25, 659.25];
     let n = 0, next = ctx.currentTime + .1;
     const kick = (tm) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(160, tm); o.frequency.exponentialRampToValueAtTime(40, tm + .15);
-      g.gain.setValueAtTime(1, tm); g.gain.exponentialRampToValueAtTime(.001, tm + .25); o.connect(g).connect(master); o.start(tm); o.stop(tm + .3); };
+      g.gain.setValueAtTime(1, tm); g.gain.exponentialRampToValueAtTime(.001, tm + .25); o.connect(g).connect(bus); o.start(tm); o.stop(tm + .3); };
     const hat = (tm, v) => { const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = noise; f.type = 'highpass'; f.frequency.value = 7000;
-      g.gain.setValueAtTime(v, tm); g.gain.exponentialRampToValueAtTime(.001, tm + .05); s.connect(f).connect(g).connect(master); s.start(tm); s.stop(tm + .06); };
+      g.gain.setValueAtTime(v, tm); g.gain.exponentialRampToValueAtTime(.001, tm + .05); s.connect(f).connect(g).connect(bus); s.start(tm); s.stop(tm + .06); };
     const tone = (tm, fr, type, len, v, cut) => { const o = ctx.createOscillator(), g = ctx.createGain(), fl = ctx.createBiquadFilter(); o.type = type; o.frequency.value = fr;
-      fl.type = 'lowpass'; fl.frequency.value = cut; g.gain.setValueAtTime(v, tm); g.gain.exponentialRampToValueAtTime(.001, tm + len); o.connect(fl).connect(g).connect(master); o.start(tm); o.stop(tm + len + .02); };
+      fl.type = 'lowpass'; fl.frequency.value = cut; g.gain.setValueAtTime(v, tm); g.gain.exponentialRampToValueAtTime(.001, tm + len); o.connect(fl).connect(g).connect(bus); o.start(tm); o.stop(tm + len + .02); };
     const id = setInterval(() => {
       while (next < ctx.currentTime + .2) {
         const s = n % 16, bar = Math.floor(n / 16) % 4;
@@ -141,10 +189,10 @@ const Chaos = (() => {
         n++; next += step;
       }
     }, 40);
-    synth = { ctx, master, id }; setNow(t('synth_name')); setBeat(150);
+    synth = { ctx, master, id, an }; setNow(t('synth_name')); setBeat(150);
   }
   function stopMusic() {
-    if (audio) { audio.pause(); audio.onended = null; audio.onerror = null; audio = null; }
+    if (audio) { audio.pause(); audio.onended = null; audio.onerror = null; try { if (audio._src) audio._src.disconnect(); } catch { /* egal */ } audio = null; }
     if (urlNow) { URL.revokeObjectURL(urlNow); urlNow = null; }
     if (synth) { clearInterval(synth.id); synth.ctx.close().catch(() => {}); synth = null; }
   }
@@ -157,7 +205,7 @@ const Chaos = (() => {
     else if (!tracks.length) { stopMusic(); startSynth(); } // neuer Zufalls-Start für den Beat
   }
   function setMuted(m) {
-    muted = m; if (audio) audio.muted = m; if (synth) synth.master.gain.value = m ? 0 : .32;
+    muted = m; if (audio && !audio._r) audio.muted = m; if (mgain) mgain.gain.value = m ? 0 : .85; if (synth) synth.master.gain.value = m ? 0 : .32;
     const u = $('mute').querySelector('use'); u.setAttribute('href', m ? '#i-mute' : '#i-volume');
   }
 
@@ -167,12 +215,12 @@ const Chaos = (() => {
     const tx = t('ticker').repeat(4); $('tk').textContent = tx + tx;
     $('player').hidden = false; setMuted(muted);
     setBeat(150);
-    if (!REDUCED) { rig(); timers.push(setInterval(bolt, 700), setInterval(rain, 160), setInterval(confetti, 110)); bolt(); }
+    if (!REDUCED) { ensureMedia(); if (mctx && mctx.resume) mctx.resume().catch(() => {}); raf = requestAnimationFrame(loop); rig(); timers.push(setInterval(bolt, 1400), setInterval(rain, 160), setInterval(confetti, 110)); bolt(); }
     startMusic();
   }
   function stop() {
     if (!on) return; on = false;
-    root.classList.remove('chaos'); timers.forEach(clearInterval); timers = [];
+    root.classList.remove('chaos'); timers.forEach(clearInterval); timers = []; stopReact();
     fx().querySelectorAll('.bolt,.rain,.confetti,.rig').forEach((e) => e.remove()); root.style.removeProperty('--beat');
     stopMusic(); $('player').hidden = true;
   }
