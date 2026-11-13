@@ -99,7 +99,7 @@ function setLevel(total) { $('cup').style.setProperty('--lvl', Math.min(1, total
 /* ---------- Effekte ---------- */
 function burst(x, y, label) {
   const f = $('fx');
-  if (!REDUCED) for (let i = 0; i < 18; i++) {
+  if (!REDUCED) for (let i = 0; i < (LITE ? 7 : 18); i++) {
     const b = h('i', { class: 'bean' }), a = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 140;
     b.style.left = x + 'px'; b.style.top = y + 'px';
     b.style.setProperty('--dx', Math.cos(a) * dist + 'px'); b.style.setProperty('--dy', Math.sin(a) * dist - 40 + 'px');

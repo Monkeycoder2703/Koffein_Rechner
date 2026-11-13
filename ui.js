@@ -6,7 +6,7 @@
     const el = e.target.closest && e.target.closest(SPOT); if (!el) return;
     const r = el.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     el.style.setProperty('--mx', x + 'px'); el.style.setProperty('--my', y + 'px');
-    if (!REDUCED && el.classList.contains('drink')) {
+    if (!REDUCED && !LITE && el.classList.contains('drink')) {
       el.style.setProperty('--ry', ((x / r.width - .5) * 14).toFixed(1) + 'deg'); el.style.setProperty('--rx', ((.5 - y / r.height) * 14).toFixed(1) + 'deg');
     }
   }, { passive: true });

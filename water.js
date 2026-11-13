@@ -9,7 +9,7 @@
   host.insertBefore(cv, host.querySelector('.grain'));
   if (!gl) { fallback2d(); return; }
   const maxU = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) || 16;
-  const N = Math.max(8, Math.min(20, maxU - 8)), LIFE = 3.4, SCALE = 0.42;
+  const N = Math.max(8, Math.min(LITE ? 12 : 20, maxU - 8)), LIFE = 3.4, SCALE = LITE ? 0.3 : 0.42;
   const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
   const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -58,7 +58,7 @@ void main(){
   let lastDraw = 0;
   function draw() {
     raf = 0; const t = now(); let live = false;
-    if (t - lastDraw < .028) { raf = requestAnimationFrame(draw); return; } // höchstens ca. 35 Bilder pro Sekunde: schont Akku und Handys
+    if (t - lastDraw < (LITE ? .04 : .028)) { raf = requestAnimationFrame(draw); return; } // höchstens ca. 35 Bilder pro Sekunde: schont Akku und Handys
     lastDraw = t;
     for (let i = 0; i < N; i++) if (t - rip[i * 4 + 2] < LIFE) { live = true; break; }
     glowAmt *= .94; if (glowAmt > .02) live = true;

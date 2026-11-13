@@ -7,7 +7,7 @@ const Chaos = (() => {
 
   const fx = () => $('fx');
   function bolt() {
-    if (fx().querySelectorAll('.bolt').length > 3) return;
+    if (fx().querySelectorAll('.bolt').length > (LITE ? 1 : 3)) return;
     const w = 200 + Math.random() * 260, hgt = innerHeight * (.7 + Math.random() * .5);
     const svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('class', 'bolt'); svg.setAttribute('viewBox', '0 0 100 200'); svg.setAttribute('preserveAspectRatio', 'none');
@@ -20,7 +20,7 @@ const Chaos = (() => {
     fx().append(svg); setTimeout(() => svg.remove(), 650);
   }
   function rain() {
-    if (fx().childElementCount > 40) return;
+    if (fx().childElementCount > (LITE ? 14 : 40)) return;
     const b = document.createElement('i'); b.className = 'bean rain';
     b.style.left = Math.random() * 100 + 'vw'; b.style.setProperty('--t', 1.8 + Math.random() * 1.6 + 's'); b.style.setProperty('--rot', (Math.random() * 900 - 450) + 'deg');
     b.style.setProperty('--sz', (0.7 + Math.random() * 1.1).toFixed(2));
@@ -32,7 +32,7 @@ const Chaos = (() => {
     root.style.setProperty('--beat', (60 / b).toFixed(3) + 's'); // 150 BPM = 0,4 s; Licht blitzt höchstens ~2,5x pro Sekunde
   }
   function confetti() {
-    if (fx().childElementCount > 45) return;
+    if (fx().childElementCount > (LITE ? 18 : 45)) return;
     const c = document.createElement('i'); c.className = 'confetti';
     c.style.left = Math.random() * 100 + 'vw'; c.style.setProperty('--hh', Math.floor(Math.random() * 360));
     c.style.setProperty('--t', 1.4 + Math.random() * 1.4 + 's'); c.style.setProperty('--rot', (Math.random() * 1200 - 600) + 'deg');
@@ -40,24 +40,25 @@ const Chaos = (() => {
   }
   function rig() { // Licht-Show aufbauen
     const f = fx(), cols = ['var(--accent)', 'var(--volt)', 'var(--pink)', 'var(--honey)'];
-    for (let i = 0; i < 7; i++) { const l = document.createElement('i'); l.className = 'laser rig'; l.style.left = (8 + i * 14) + '%';
+    const NL = LITE ? 4 : 7;
+    for (let i = 0; i < NL; i++) { const l = document.createElement('i'); l.className = 'laser rig'; l.style.left = (8 + i * (LITE ? 28 : 14)) + '%';
       l.style.setProperty('--c', cols[i % 4]); l.style.setProperty('--a', (20 + Math.random() * 30) * (i % 2 ? 1 : -1) + 'deg'); l.style.setProperty('--d', (0.9 + Math.random() * 1.2).toFixed(2) + 's'); l.style.setProperty('--dl', -Math.random() * 2 + 's'); f.append(l); }
-    for (let i = 0; i < 3; i++) { const sp = document.createElement('i'); sp.className = 'spot rig'; sp.style.setProperty('--x', (15 + i * 35) + '%'); sp.style.setProperty('--y', (25 + (i % 2) * 45) + '%');
+    for (let i = 0; i < (LITE ? 1 : 3); i++) { const sp = document.createElement('i'); sp.className = 'spot rig'; sp.style.setProperty('--x', (15 + i * 35) + '%'); sp.style.setProperty('--y', (25 + (i % 2) * 45) + '%');
       sp.style.setProperty('--c', cols[(i + 1) % 4]); sp.style.setProperty('--d', (1.4 + i * .6) + 's'); f.append(sp); }
     const d = document.createElement('i'); d.className = 'disco rig'; f.append(d);
-    const eq = $('eq'); if (eq && !eq.childElementCount) for (let i = 0; i < 28; i++) { const e = document.createElement('i'); e.style.setProperty('--m', (.35 + Math.random() * .65).toFixed(2)); e.style.setProperty('--dl', -Math.random() * .6 + 's'); eq.append(e); }
+    const eq = $('eq'); if (eq && !eq.childElementCount) for (let i = 0; i < (LITE ? 16 : 28); i++) { const e = document.createElement('i'); e.style.setProperty('--m', (.35 + Math.random() * .65).toFixed(2)); e.style.setProperty('--dl', -Math.random() * .6 + 's'); eq.append(e); }
   }
 
   /* ---- Show reagiert auf die Musik ---- */
   let raf = 0, lastT = 0, reactive = false, buf = null, avg = 0, lastBeat = 0, beatN = 0, f = [0, 0], sm = { b: 0, m: 0 }, cups = [];
   function onBeat() {
     f[beatN % 2] = 1; beatN++;
-    bolt(); if (Math.random() < .35) setTimeout(bolt, 90);
-    for (let k = 0; k < 5; k++) confetti();
+    bolt(); if (!LITE && Math.random() < .35) setTimeout(bolt, 90);
+    for (let k = 0; k < (LITE ? 2 : 5); k++) confetti();
   }
   function loop(ts) {
     raf = requestAnimationFrame(loop);
-    if (ts - lastT < 30) return; lastT = ts;
+    if (ts - lastT < (LITE ? 50 : 30)) return; lastT = ts;
     const A = synth ? synth.an : (audio && audio._r ? man : null);
     if (!A) { if (reactive) { reactive = false; root.classList.remove('react'); } return; }
     if (!reactive) { reactive = true; root.classList.add('react'); cups = [...document.querySelectorAll('.cup,.hero-cup')]; }
@@ -218,7 +219,7 @@ const Chaos = (() => {
     const tx = t('ticker').repeat(4); $('tk').textContent = tx + tx;
     $('player').hidden = false; setMuted(muted);
     setBeat(150);
-    if (!REDUCED) { ensureMedia(); if (mctx && mctx.resume) mctx.resume().catch(() => {}); raf = requestAnimationFrame(loop); rig(); timers.push(setInterval(bolt, 1100), setInterval(rain, 160), setInterval(confetti, 110)); bolt(); }
+    if (!REDUCED) { ensureMedia(); if (mctx && mctx.resume) mctx.resume().catch(() => {}); raf = requestAnimationFrame(loop); rig(); timers.push(setInterval(bolt, 1100), setInterval(rain, LITE ? 420 : 160), setInterval(confetti, LITE ? 260 : 110)); bolt(); }
     startMusic();
   }
   function stop() {

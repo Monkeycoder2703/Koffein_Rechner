@@ -480,7 +480,24 @@ html.react .spot{opacity:calc(.18 + var(--bass,0)*.6);scale:calc(.8 + var(--bass
 html.react .disco{scale:calc(1 + var(--bass,0)*.3)}
 html.react #eq i{animation:none}
 
+/* ---------- Schlanke Effekte für Handy und Tablet (html.lite) ---------- */
+html.lite *,html.lite *::before,html.lite *::after{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+html.lite .panel,html.lite .drink,html.lite .tabs,html.lite .size-opt,html.lite dialog,html.lite .chip,html.lite .lang-btn{background-color:color-mix(in srgb,var(--surface) 88%,transparent)}
+html.lite .top{background:color-mix(in srgb,var(--bg) 94%,transparent)}
+html.lite #bg .blob{mix-blend-mode:normal;animation:none;will-change:auto}
+html.lite #bg .grain,html.lite #bg .scan{display:none!important}
+html.lite.chaos{animation-timing-function:steps(14,end)} /* Farbwechsel in Stufen: schnell, aber nur wenige Neuberechnungen pro Sekunde */
+html.lite.chaos #bg .blob{animation:none}
+html.lite.chaos .cup,html.lite.chaos .hero-cup{filter:none;animation:none}
+html.lite.chaos .display,html.lite.chaos .big,html.lite.chaos .sec-h h2,html.lite.chaos .panel h2{animation:none;text-shadow:2px 0 var(--pink),-2px 0 var(--volt)}
+html.lite.chaos .btn:not(.ghost):not(.danger){animation:none}
+html.lite.chaos .panel,html.lite.chaos .drink,html.lite.chaos .size-opt,html.lite.chaos .tabs,html.lite.chaos .chip,html.lite.chaos dialog{box-shadow:0 0 12px var(--accent)}
+html.lite .bolt{filter:drop-shadow(0 0 16px var(--accent));mix-blend-mode:normal}
+html.lite .laser,html.lite .spot{mix-blend-mode:normal}
+html.lite .spot{opacity:.35}
+
 /* "weniger Bewegung" im System (oder nicht überschrieben): Animationen aus */
 html.reduce *,html.reduce *::before,html.reduce *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 html.reduce .cup-svg .steam path{opacity:.35}
 #fx-box[hidden]{display:none}
+html.lite .disco{width:52px;height:52px;top:-18px}

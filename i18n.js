@@ -5,6 +5,10 @@ const SYSTEM_REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').mat
 let FX_FORCE = false; try { FX_FORCE = localStorage.getItem('kr-fx') === 'on'; } catch { /* ohne Speicher: Systemvorgabe */ }
 const REDUCED = SYSTEM_REDUCED && !FX_FORCE; // "weniger Bewegung" im System, außer man schaltet Effekte hier ausdrücklich ein
 if (REDUCED) document.documentElement.classList.add('reduce');
+// Handy/Tablet: schlankere Effekte (weniger Weichzeichner, Mischmodi und Animationen), damit nichts ruckelt
+let FULL_FX = false; try { FULL_FX = localStorage.getItem('kr-lite') === 'off'; } catch { /* egal */ }
+const LITE = !FULL_FX && (window.matchMedia('(pointer: coarse)').matches || innerWidth < 720);
+if (LITE) document.documentElement.classList.add('lite');
 const I18N = {
 de: {
   title: 'Koffein Rechner – Dein Tag in Tassen', meta_desc: 'Koffein Rechner: Trag deine Getränke ein und sieh, wie viel Koffein du heute schon hattest.',
