@@ -438,9 +438,12 @@ html.chaos .btn:not(.ghost):not(.danger){background:linear-gradient(90deg,var(--
 @keyframes slide{to{background-position:-300% 0}}
 html.chaos body{padding-bottom:36px}
 html.chaos .track i{animation:slide 1.6s linear infinite;background-image:linear-gradient(90deg,var(--accent),var(--honey),var(--volt),var(--accent));background-size:300% 100%}
-.bolt{position:fixed;overflow:visible;pointer-events:none;filter:drop-shadow(0 0 8px var(--honey)) drop-shadow(0 0 20px var(--accent));opacity:0;animation:bolt .55s ease-out forwards}
-.bolt polyline{fill:none;stroke:var(--honey);stroke-width:5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
-@keyframes bolt{0%{opacity:0}12%{opacity:1}100%{opacity:0}}
+.bolt{position:fixed;overflow:visible;pointer-events:none;filter:drop-shadow(0 0 14px var(--honey)) drop-shadow(0 0 40px var(--accent)) drop-shadow(0 0 90px var(--pink));opacity:0;mix-blend-mode:screen;animation:bolt .6s ease-out forwards}
+.bolt polyline{fill:none;stroke-linejoin:miter;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.bolt .glow{stroke:var(--honey);stroke-width:16}
+.bolt .core{stroke:#fff;stroke-width:6}
+.bolt .fork.glow{stroke-width:9}.bolt .fork.core{stroke-width:3}
+@keyframes bolt{0%{opacity:0;transform:scale(.96)}10%{opacity:1;transform:scale(1)}100%{opacity:0}}
 .bean.rain{top:-30px;box-shadow:0 0 14px var(--accent);animation:fall var(--t,2.6s) linear forwards;transform:scale(var(--sz,1))}
 @keyframes fall{to{transform:translateY(112vh) rotate(var(--rot,540deg)) scale(var(--sz,1))}}
 .ticker{position:fixed;left:0;right:0;bottom:0;height:36px;z-index:40;overflow:hidden;display:none;align-items:center;background:var(--accent);color:var(--accent-ink);font-weight:800;letter-spacing:.14em;font-size:.85rem}

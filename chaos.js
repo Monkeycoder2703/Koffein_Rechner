@@ -7,14 +7,17 @@ const Chaos = (() => {
 
   const fx = () => $('fx');
   function bolt() {
-    const w = 90 + Math.random() * 90, hgt = 220 + Math.random() * 260;
+    if (fx().querySelectorAll('.bolt').length > 3) return;
+    const w = 200 + Math.random() * 260, hgt = innerHeight * (.7 + Math.random() * .5);
     const svg = document.createElementNS(SVGNS, 'svg');
     svg.setAttribute('class', 'bolt'); svg.setAttribute('viewBox', '0 0 100 200'); svg.setAttribute('preserveAspectRatio', 'none');
-    let pts = '50,0', x = 50; for (let y = 25; y <= 200; y += 25) { x = Math.max(8, Math.min(92, x + (Math.random() * 60 - 30))); pts += ` ${x.toFixed(0)},${y}`; }
-    const pl = document.createElementNS(SVGNS, 'polyline'); pl.setAttribute('points', pts); svg.append(pl);
+    const path = (x0, y0, steps, spread, dir) => { let x = x0, y = y0, pts = [x.toFixed(0) + ',' + y.toFixed(0)]; for (let i = 0; i < steps; i++) { y += (200 - y0) / steps * (.7 + Math.random() * .6); x = Math.max(4, Math.min(96, x + (Math.random() * 2 - 1) * spread + dir * 4)); pts.push(x.toFixed(0) + ',' + Math.min(200, y).toFixed(0)); } return pts; };
+    const main = path(30 + Math.random() * 40, 0, 11, 26, 0), lines = [main];
+    for (let k = 0; k < 3; k++) { const p = main[2 + Math.floor(Math.random() * 7)].split(','); lines.push(path(+p[0], +p[1], 4 + Math.floor(Math.random() * 3), 20, Math.random() < .5 ? -1 : 1)); }
+    lines.forEach((pts, i) => ['glow', 'core'].forEach((cls) => { const pl = document.createElementNS(SVGNS, 'polyline'); pl.setAttribute('points', pts.join(' ')); pl.setAttribute('class', cls + (i ? ' fork' : '')); svg.append(pl); }));
     svg.style.width = w + 'px'; svg.style.height = hgt + 'px';
-    svg.style.left = Math.random() * (innerWidth - w) + 'px'; svg.style.top = Math.random() * Math.max(10, innerHeight - hgt) + 'px';
-    fx().append(svg); setTimeout(() => svg.remove(), 600);
+    svg.style.left = Math.random() * (innerWidth - w * .5) - w * .25 + 'px'; svg.style.top = -Math.random() * hgt * .15 + 'px';
+    fx().append(svg); setTimeout(() => svg.remove(), 650);
   }
   function rain() {
     if (fx().childElementCount > 40) return;
@@ -49,7 +52,7 @@ const Chaos = (() => {
   let raf = 0, lastT = 0, reactive = false, buf = null, avg = 0, lastBeat = 0, beatN = 0, f = [0, 0], sm = { b: 0, m: 0 }, cups = [];
   function onBeat() {
     f[beatN % 2] = 1; beatN++;
-    if (beatN % 2 === 0) bolt();
+    bolt(); if (Math.random() < .35) setTimeout(bolt, 90);
     for (let k = 0; k < 5; k++) confetti();
   }
   function loop(ts) {
@@ -215,7 +218,7 @@ const Chaos = (() => {
     const tx = t('ticker').repeat(4); $('tk').textContent = tx + tx;
     $('player').hidden = false; setMuted(muted);
     setBeat(150);
-    if (!REDUCED) { ensureMedia(); if (mctx && mctx.resume) mctx.resume().catch(() => {}); raf = requestAnimationFrame(loop); rig(); timers.push(setInterval(bolt, 1400), setInterval(rain, 160), setInterval(confetti, 110)); bolt(); }
+    if (!REDUCED) { ensureMedia(); if (mctx && mctx.resume) mctx.resume().catch(() => {}); raf = requestAnimationFrame(loop); rig(); timers.push(setInterval(bolt, 1100), setInterval(rain, 160), setInterval(confetti, 110)); bolt(); }
     startMusic();
   }
   function stop() {
