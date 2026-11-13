@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Auf GitHub Pages gibt es keine Server-Header: CSP hier. Ersetze die API-Adresse durch deine! -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://api.deine-domain.de; object-src 'none'; base-uri 'self'; form-action 'self'">
+<!-- Auf GitHub Pages gibt es keine Server-Header: CSP hier. Erlaubt nur dieselbe Seite und Supabase. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <title>Koffein Rechner</title>
 <link rel="stylesheet" href="style.css">
@@ -16,8 +16,8 @@
   <section class="card" id="card-login">
     <h2 id="auth-title">Anmelden</h2>
     <form id="auth-form">
-      <label id="email-row" hidden>E-Mail <input id="e" type="email" maxlength="254" autocomplete="email"></label>
-      <label>Benutzername <input id="u" required minlength="3" maxlength="20" autocomplete="username"></label>
+      <label>E-Mail <input id="e" type="email" required maxlength="254" autocomplete="email"></label>
+      <label id="user-row" hidden>Benutzername (öffentlich im Leaderboard) <input id="u" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" autocomplete="nickname"></label>
       <label>Passwort <input id="p" type="password" required minlength="10" maxlength="72" autocomplete="current-password"></label>
       <input id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
       <p id="auth-msg" role="alert"></p>
@@ -107,6 +107,7 @@
 <div id="loader" hidden>
   <div class="loader-box"><div class="spinner"></div><h3>Wusstest du?</h3><p id="fact"></p></div>
 </div>
+<script src="supabase.js"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>
