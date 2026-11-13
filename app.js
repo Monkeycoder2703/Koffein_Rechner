@@ -373,8 +373,20 @@ $('add').onclick = async () => {
   } catch (err) { $('loader').classList.remove('on'); toast(err.message, 'err'); }
   finally { btn.disabled = !state.selected || !state.amount; }
 };
+// Zufällig, aber ohne Wiederholung: erst wenn alle durch sind, wird neu gemischt; der erste der neuen Runde ist nie der letzte alte
+let factBag = [], lastFact = -1; try { lastFact = Number(localStorage.getItem('kr-lastfact')); if (!Number.isInteger(lastFact)) lastFact = -1; } catch { lastFact = -1; }
+function nextFact() {
+  const list = FACTS[LANG];
+  if (!factBag.length) {
+    factBag = list.map((_, i) => i);
+    for (let i = factBag.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [factBag[i], factBag[k]] = [factBag[k], factBag[i]]; }
+    if (factBag[factBag.length - 1] === lastFact && factBag.length > 1) { const k = Math.floor(Math.random() * (factBag.length - 1)); [factBag[factBag.length - 1], factBag[k]] = [factBag[k], factBag[factBag.length - 1]]; }
+  }
+  lastFact = factBag.pop(); try { localStorage.setItem('kr-lastfact', String(lastFact)); } catch { /* egal */ }
+  return list[lastFact];
+}
 async function playLoader() {
-  const f = FACTS[LANG][Math.floor(Math.random() * FACTS[LANG].length)], L = $('loader');
+  const f = nextFact(), L = $('loader');
   $('ld-fact').replaceChildren(h('span', { class: 'ld-ico' }, ico(f.i)), h('h3', { text: f.t }), h('p', { text: f.x }));
   mountCup($('ld-cup')); L.setAttribute('aria-hidden', 'false'); L.classList.add('on');
   await sleep(3500);
@@ -480,3 +492,13 @@ applyAuthMode(); applyStatic(); mountCup($('hero-cup')); renderSelection();
   } catch { show(false); }
 })();
 setTimeout(() => document.body.classList.remove('booting'), 6000);
+
+// Esc beendet den Rave sofort (der Dialog schließt sich bei Esc ohnehin selbst)
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && Chaos.on) { Chaos.stop(); setChaosUI(); } });
+// Schalter für Effekte trotz "weniger Bewegung" im System
+(() => {
+  const box = $('fx-box'), b = $('fx-toggle'); if (!box || !SYSTEM_REDUCED) return;
+  box.hidden = false;
+  const label = () => { b.textContent = t(FX_FORCE ? 'fx_off' : 'fx_on'); };
+  label(); b.onclick = () => { try { if (FX_FORCE) localStorage.removeItem('kr-fx'); else localStorage.setItem('kr-fx', 'on'); } catch { /* egal */ } location.reload(); };
+})();

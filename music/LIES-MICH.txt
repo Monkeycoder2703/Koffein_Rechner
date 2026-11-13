@@ -13,3 +13,5 @@ Ist die Liste leer, spielt der Chaos Mode seinen eingebauten Beat.
 
 Hinweis: Auf GitHub Pages kann jeder die Dateien herunterladen. Nutze nur Musik,
 für die du die Rechte hast (selbst gemacht, Lizenz frei, z. B. Creative Commons).
+
+Optional: pro Titel "bpm" angeben, damit das Licht im Takt blitzt, z. B. {"title":"Mein Song","file":"song.mp3","bpm":128}

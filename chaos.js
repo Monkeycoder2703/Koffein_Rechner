@@ -1,5 +1,5 @@
 'use strict';
-/* CHAOS MODE: Theme-Wechsel mit Blitzen, Bohnenregen, Ticker und Musik.
+/* CHAOS MODE = Rave: Beat-Blitze im Takt, Laser, Scheinwerfer, Discokugel, Equalizer, Konfetti, Blitze, schnelle Farbwechsel, Ticker, Musik.
    Sicherheit: Blinken bleibt unter 3 Hz, vorher gibt es eine Warnung, bei "weniger Bewegung" läuft nur das Farbtheme. */
 const Chaos = (() => {
   const root = document.documentElement, SVGNS = 'http://www.w3.org/2000/svg';
@@ -24,6 +24,27 @@ const Chaos = (() => {
     fx().append(b); setTimeout(() => b.remove(), 3600);
   }
 
+  function setBeat(bpm) {
+    let b = Number(bpm) || 150; while (b > 170) b /= 2; while (b < 70) b *= 2;
+    root.style.setProperty('--beat', (60 / b).toFixed(3) + 's'); // 150 BPM = 0,4 s; Licht blitzt höchstens ~2,5x pro Sekunde
+  }
+  function confetti() {
+    if (fx().childElementCount > 90) return;
+    const c = document.createElement('i'); c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw'; c.style.setProperty('--hh', Math.floor(Math.random() * 360));
+    c.style.setProperty('--t', 1.4 + Math.random() * 1.4 + 's'); c.style.setProperty('--rot', (Math.random() * 1200 - 600) + 'deg');
+    fx().append(c); setTimeout(() => c.remove(), 3000);
+  }
+  function rig() { // Licht-Show aufbauen
+    const f = fx(), cols = ['var(--accent)', 'var(--volt)', 'var(--pink)', 'var(--honey)'];
+    for (let i = 0; i < 7; i++) { const l = document.createElement('i'); l.className = 'laser rig'; l.style.left = (8 + i * 14) + '%';
+      l.style.setProperty('--c', cols[i % 4]); l.style.setProperty('--a', (20 + Math.random() * 30) * (i % 2 ? 1 : -1) + 'deg'); l.style.setProperty('--d', (0.9 + Math.random() * 1.2).toFixed(2) + 's'); l.style.setProperty('--dl', -Math.random() * 2 + 's'); f.append(l); }
+    for (let i = 0; i < 3; i++) { const sp = document.createElement('i'); sp.className = 'spot rig'; sp.style.setProperty('--x', (15 + i * 35) + '%'); sp.style.setProperty('--y', (25 + (i % 2) * 45) + '%');
+      sp.style.setProperty('--c', cols[(i + 1) % 4]); sp.style.setProperty('--d', (1.4 + i * .6) + 's'); f.append(sp); }
+    const d = document.createElement('i'); d.className = 'disco rig'; f.append(d);
+    const eq = $('eq'); if (eq && !eq.childElementCount) for (let i = 0; i < 28; i++) { const e = document.createElement('i'); e.style.setProperty('--m', (.35 + Math.random() * .65).toFixed(2)); e.style.setProperty('--dl', -Math.random() * .6 + 's'); eq.append(e); }
+  }
+
   /* ---- Musik ---- */
   function setNow(txt) { $('np').textContent = t('now_playing') + txt; }
   async function loadTracks() {
@@ -31,7 +52,7 @@ const Chaos = (() => {
     try {
       const r = await fetch('music/playlist.json', { cache: 'no-store' }); const j = await r.json();
       tracks = (j.tracks || []).filter((x) => x && typeof x.file === 'string' && /^[\w\-. ()äöüÄÖÜß]+\.(mp3|ogg|m4a|wav|opus|aac)$/i.test(x.file))
-        .map((x) => ({ title: String(x.title || x.file).slice(0, 60), file: x.file }));
+        .map((x) => ({ title: String(x.title || x.file).slice(0, 60), file: x.file, bpm: Number(x.bpm) || 0 }));
       for (let i = tracks.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [tracks[i], tracks[k]] = [tracks[k], tracks[i]]; }
     } catch { tracks = []; }
     ready = true;
@@ -42,7 +63,7 @@ const Chaos = (() => {
     audio = new Audio('music/' + encodeURIComponent(tr.file)); audio.volume = .85; audio.muted = muted;
     audio.onended = () => { ti++; if (on && my === session) playTrack(); };
     audio.onerror = () => { ti++; if (on && my === session && ti < tracks.length * 2) playTrack(); };
-    audio.play().catch(() => {}); setNow(tr.title);
+    audio.play().catch(() => {}); setNow(tr.title); setBeat(tr.bpm || 128);
   }
   function startSynth() {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -66,7 +87,7 @@ const Chaos = (() => {
         n++; next += step;
       }
     }, 40);
-    synth = { ctx, master, id }; setNow(t('synth_name'));
+    synth = { ctx, master, id }; setNow(t('synth_name')); setBeat(150);
   }
   function stopMusic() {
     if (audio) { audio.pause(); audio.onended = null; audio.onerror = null; audio = null; }
@@ -90,13 +111,14 @@ const Chaos = (() => {
     root.classList.add('chaos');
     const tx = t('ticker').repeat(4); $('tk').textContent = tx + tx;
     $('player').hidden = false; setMuted(muted);
-    if (!REDUCED) { timers.push(setInterval(bolt, 950), setInterval(rain, 200)); bolt(); }
+    setBeat(150);
+    if (!REDUCED) { rig(); timers.push(setInterval(bolt, 700), setInterval(rain, 160), setInterval(confetti, 70)); bolt(); }
     startMusic();
   }
   function stop() {
     if (!on) return; on = false;
     root.classList.remove('chaos'); timers.forEach(clearInterval); timers = [];
-    fx().querySelectorAll('.bolt,.rain').forEach((e) => e.remove());
+    fx().querySelectorAll('.bolt,.rain,.confetti,.rig').forEach((e) => e.remove()); root.style.removeProperty('--beat');
     stopMusic(); $('player').hidden = true;
   }
   function relabel() { if (on) { $('tk').textContent = t('ticker').repeat(8); if (synth) setNow(t('synth_name')); else if (tracks.length) setNow(tracks[ti % tracks.length].title); } }

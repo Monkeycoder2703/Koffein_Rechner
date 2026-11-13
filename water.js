@@ -6,10 +6,10 @@
   const host = $('bg'); if (!host) return;
   const cv = document.createElement('canvas'); cv.id = 'water'; cv.setAttribute('aria-hidden', 'true');
   const gl = cv.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'low-power' });
-  if (!gl) return;
   host.insertBefore(cv, host.querySelector('.grain'));
-
-  const N = 32, LIFE = 4.2, SCALE = 0.5;
+  if (!gl) { fallback2d(); return; }
+  const maxU = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) || 16;
+  const N = Math.max(8, Math.min(32, maxU - 8)), LIFE = 4.2, SCALE = 0.5;
   const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
   const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -32,12 +32,12 @@ void main(){
   float fres=clamp(length(g)*9.,0.,1.);
   vec3 col=mix(uA,uB,clamp(.5+h*.9,0.,1.));
   float glow=exp(-dot(p-uM.xy,p-uM.xy)/(2.*(110.*${SCALE.toFixed(2)}*2.)*(110.*${SCALE.toFixed(2)}*2.)))*uM.z;
-  float a=clamp(abs(h)*.38+spec*.5+fres*.22+glow*.22,0.,.62);
+  float a=clamp(abs(h)*.55+spec*.6+fres*.3+glow*.26,0.,.8);
   gl_FragColor=vec4((col*(.55+spec)+vec3(spec))*a+uA*glow*.22,a);
 }`;
-  const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); return o; };
+  const sh = (type, src) => { const o = gl.createShader(type); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) console.warn('Wasser-Shader:', gl.getShaderInfoLog(o)); return o; };
   const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, vs)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, fs)); gl.linkProgram(pr);
-  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { cv.remove(); return; }
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { console.warn('Wasser-Shader: Link fehlgeschlagen'); cv.remove(); fallback2d(); return; }
   gl.useProgram(pr);
   const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
@@ -69,10 +69,32 @@ void main(){
   function move(x, y) {
     mx = x; my = y; glowAmt = Math.min(1, glowAmt + .25);
     const dist = Math.hypot(x - lastX, y - lastY), tt = performance.now();
-    if (dist > 26 && tt - lastT > 28) { spawn(x, y, .45 + Math.min(1, dist / 90) * .65); lastX = x; lastY = y; lastT = tt; } else kick();
+    if (dist > 16 && tt - lastT > 20) { spawn(x, y, .8 + Math.min(1, dist / 80) * .7); lastX = x; lastY = y; lastT = tt; } else kick();
   }
+  // Eigene Wellen, auch ohne Mauszeiger: man sieht sofort, dass das Wasser da ist
+  const amb = () => { if (!document.hidden) spawn(Math.random() * innerWidth, Math.random() * innerHeight, .9); setTimeout(amb, document.documentElement.classList.contains('chaos') ? 900 : 4500); };
+  setTimeout(amb, 1200);
+  cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); cv.remove(); fallback2d(); });
   addEventListener('pointermove', (e) => move(e.clientX, e.clientY), { passive: true });
   // Auf dem Handy feuert pointermove nicht mehr, sobald die Seite scrollt: touchmove liefert die Spur weiter
   addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
   addEventListener('pointerdown', (e) => { lastX = e.clientX; lastY = e.clientY; spawn(e.clientX, e.clientY, 1.7); }, { passive: true });
+
+  function fallback2d() { // Ohne WebGL: einfache Ringe auf einem 2D-Canvas
+    const c = document.createElement('canvas'); c.id = 'water'; c.setAttribute('aria-hidden', 'true'); host.insertBefore(c, host.querySelector('.grain'));
+    const g = c.getContext('2d'); if (!g) { c.remove(); return; }
+    let rings = [], raf = 0, lx = -999, ly = -999, lt = 0;
+    const fit = () => { c.width = innerWidth; c.height = innerHeight; }; fit(); addEventListener('resize', fit);
+    const add = (x, y, s) => { rings.push({ x, y, s, t: performance.now() }); if (rings.length > 40) rings.shift(); if (!raf) raf = requestAnimationFrame(frame); };
+    function frame() {
+      raf = 0; g.clearRect(0, 0, c.width, c.height); const n = performance.now(), chaos = document.documentElement.classList.contains('chaos');
+      rings = rings.filter((r) => n - r.t < 3200);
+      for (const r of rings) { const a = (n - r.t) / 3200;
+        for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(r.x, r.y, a * 260 + k * 14, 0, 6.2832);
+          g.strokeStyle = chaos ? 'hsla(' + ((n / 6 + k * 40) % 360) + ',100%,65%,' + ((1 - a) * .6) + ')' : 'rgba(31,229,200,' + ((1 - a) * .5 / (k + 1)) + ')'; g.lineWidth = 2.5 - k * .6; g.stroke(); } }
+      if (rings.length) raf = requestAnimationFrame(frame);
+    }
+    addEventListener('pointermove', (e) => { const n = performance.now(); if (Math.hypot(e.clientX - lx, e.clientY - ly) > 22 && n - lt > 30) { add(e.clientX, e.clientY, 1); lx = e.clientX; ly = e.clientY; lt = n; } }, { passive: true });
+    addEventListener('pointerdown', (e) => add(e.clientX, e.clientY, 2), { passive: true });
+  }
 })();

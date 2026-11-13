@@ -1,7 +1,10 @@
 'use strict';
 /* Deutsch / Englisch. Neue Texte: Schlüssel in BEIDEN Sprachen eintragen. */
 const $ = (id) => document.getElementById(id);
-const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SYSTEM_REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let FX_FORCE = false; try { FX_FORCE = localStorage.getItem('kr-fx') === 'on'; } catch { /* ohne Speicher: Systemvorgabe */ }
+const REDUCED = SYSTEM_REDUCED && !FX_FORCE; // "weniger Bewegung" im System, außer man schaltet Effekte hier ausdrücklich ein
+if (REDUCED) document.documentElement.classList.add('reduce');
 const I18N = {
 de: {
   title: 'Koffein Rechner – Dein Tag in Tassen', meta_desc: 'Koffein Rechner: Trag deine Getränke ein und sieh, wie viel Koffein du heute schon hattest.',
@@ -50,10 +53,13 @@ de: {
   forgot_ok: 'Falls es ein Konto mit dieser Adresse gibt, ist der Link unterwegs.',
   chaos_btn: 'CHAOS', chaos_stop: 'STOPP', chaos_aria: 'Chaos Mode', chaos_locked: 'Chaos Mode ab {mg} mg Koffein. Noch {left} mg!',
   chaos_unlocked: 'CHAOS MODE freigeschaltet! Schau oben rechts.', chaos_lost: 'Chaos Mode beendet: du bist wieder unter der Hälfte.',
-  warn_title: 'Achtung: Blinklichter', warn_text: 'Der Chaos Mode hat blinkende Lichter, schnelle Farbwechsel und laute Musik. Bei Lichtempfindlichkeit oder Epilepsie bitte nicht aktivieren.',
+  warn_title: 'Achtung: Blinklichter',
+  warn_text: 'Der Chaos Mode ist ein Rave: blinkende Lichter, sehr schnelle Farbwechsel und laute Musik. Bei Lichtempfindlichkeit oder Epilepsie bitte nicht aktivieren. Mit der Esc-Taste oder STOPP beendest du ihn sofort.',
+  ticker: 'RAVE MODE /// CHAOS /// MEHR BASS /// MEHR LICHT /// MEHR KOFFEIN /// ',
+  fx_title: 'Animationen', fx_hint: 'Dein Gerät ist auf „weniger Bewegung“ gestellt, deshalb sind Wasser, Blitze und viele Animationen aus. Hier kannst du sie trotzdem einschalten.',
+  fx_on: 'Effekte einschalten', fx_off: 'Zurück zur Systemvorgabe', warn_text: 'Der Chaos Mode hat blinkende Lichter, schnelle Farbwechsel und laute Musik. Bei Lichtempfindlichkeit oder Epilepsie bitte nicht aktivieren.',
   warn_go: 'Los, Chaos!', music_mute: 'Musik an/aus', music_next: 'Nächster Song', now_playing: 'Läuft: ', synth_name: 'Eingebauter Chaos-Beat',
   chaos_reduced: 'Dein Gerät ist auf weniger Bewegung gestellt. Der Chaos Mode läuft deshalb ohne Blinken.',
-  ticker: 'CHAOS MODE /// MEHR KOFFEIN /// MEHR LICHT /// MEHR CHAOS /// '
 },
 en: {
   title: 'Caffeine Counter – Your day in cups', meta_desc: 'Caffeine Counter: log your drinks and see how much caffeine you have had today.',
@@ -102,36 +108,81 @@ en: {
   forgot_ok: 'If an account exists for this address, the link is on its way.',
   chaos_btn: 'CHAOS', chaos_stop: 'STOP', chaos_aria: 'Chaos mode', chaos_locked: 'Chaos mode unlocks at {mg} mg caffeine. {left} mg to go!',
   chaos_unlocked: 'CHAOS MODE unlocked! Look top right.', chaos_lost: 'Chaos mode ended: you are back under half the limit.',
-  warn_title: 'Warning: flashing lights', warn_text: "Chaos mode has flashing lights, fast colour changes and loud music. If you are photosensitive or have epilepsy, please don't turn it on.",
+  warn_title: 'Warning: flashing lights',
+  warn_text: "Chaos mode is a rave: flashing lights, very fast colour changes and loud music. If you are photosensitive or have epilepsy, please don't turn it on. Press Esc or STOP to end it instantly.",
+  ticker: 'RAVE MODE /// CHAOS /// MORE BASS /// MORE LIGHT /// MORE CAFFEINE /// ',
+  fx_title: 'Animations', fx_hint: 'Your device is set to "reduce motion", so water, lightning and many animations are off. You can still turn them on here.',
+  fx_on: 'Turn effects on', fx_off: 'Back to system setting', warn_text: "Chaos mode has flashing lights, fast colour changes and loud music. If you are photosensitive or have epilepsy, please don't turn it on.",
   warn_go: 'Bring the chaos!', music_mute: 'Music on/off', music_next: 'Next song', now_playing: 'Now playing: ', synth_name: 'Built-in chaos beat',
   chaos_reduced: 'Your device prefers reduced motion, so chaos mode runs without flashing.',
-  ticker: 'CHAOS MODE /// MORE CAFFEINE /// MORE LIGHT /// MORE CHAOS /// '
 }
 };
 const FACTS = {
 de: [
-  { i: 'clock', t: 'Spitze nach einer Stunde', x: 'Koffein erreicht nach 30 bis 60 Minuten seine höchste Konzentration im Blut.' },
-  { i: 'pulse', t: 'Halbwertszeit: 5 Stunden', x: 'Nach etwa 5 Stunden ist noch die Hälfte deines Koffeins im Körper aktiv.' },
-  { i: 'shield', t: '400 mg sind die Grenze', x: 'Bis 400 mg am Tag gelten für gesunde Erwachsene als unbedenklich (EFSA).' },
-  { i: 'zap', t: 'Nicht alles auf einmal', x: 'Einzeldosen über 200 mg solltest du vermeiden. Verteile deinen Konsum lieber.' },
-  { i: 'heart', t: 'In der Schwangerschaft', x: 'Schwangere sollten höchstens 200 mg Koffein pro Tag zu sich nehmen.' },
-  { i: 'moon', t: 'Koffein klaut Tiefschlaf', x: 'Spät getrunken stört Koffein den Tiefschlaf, auch wenn du problemlos einschläfst.' },
-  { i: 'alert', t: 'Zu viel macht zappelig', x: 'Herzklopfen, Unruhe, Zittern und Magenprobleme können Zeichen einer Überdosis sein.' },
-  { i: 'bulb', t: 'Müdigkeit wird nur versteckt', x: 'Koffein blockiert Adenosin-Rezeptoren. Das Müdigkeitssignal wird verdeckt, nicht abgebaut.' },
-  { i: 'flame', t: 'Der Körper gewöhnt sich', x: 'Wer regelmäßig trinkt, braucht mehr für denselben Effekt. Beim Absetzen drohen Kopfschmerzen.' },
-  { i: 'zap', t: 'Energy Drinks: doppelt riskant', x: 'Oft mehr Koffein als eine Tasse Kaffee, dazu viel Zucker.' }
+  { i: "clock", t: "Spitze nach einer Stunde", x: "Koffein erreicht nach 30 bis 60 Minuten seine höchste Konzentration im Blut." },
+  { i: "pulse", t: "Halbwertszeit: etwa 5 Stunden", x: "Nach etwa 5 Stunden ist noch die Hälfte deines Koffeins im Körper aktiv. Bei manchen Menschen dauert es deutlich länger." },
+  { i: "shield", t: "400 mg sind die Grenze", x: "Bis 400 mg am Tag gelten für gesunde Erwachsene als unbedenklich (EFSA)." },
+  { i: "zap", t: "Nicht alles auf einmal", x: "Einzeldosen über 200 mg solltest du vermeiden. Verteile deinen Konsum lieber." },
+  { i: "heart", t: "In der Schwangerschaft", x: "Schwangere sollten höchstens 200 mg Koffein pro Tag zu sich nehmen." },
+  { i: "moon", t: "Koffein klaut Tiefschlaf", x: "Spät getrunken stört Koffein den Tiefschlaf, auch wenn du problemlos einschläfst." },
+  { i: "alert", t: "Zu viel macht zappelig", x: "Herzklopfen, Unruhe, Zittern und Magenprobleme können Zeichen einer Überdosis sein." },
+  { i: "bulb", t: "Müdigkeit wird nur versteckt", x: "Koffein blockiert Adenosin-Rezeptoren. Das Müdigkeitssignal wird verdeckt, nicht abgebaut." },
+  { i: "flame", t: "Der Körper gewöhnt sich", x: "Wer regelmäßig trinkt, braucht mehr für denselben Effekt. Beim Absetzen drohen Kopfschmerzen." },
+  { i: "zap", t: "Energy Drinks: doppelt riskant", x: "Oft mehr Koffein als eine Tasse Kaffee, dazu viel Zucker." },
+  { i: "coffee", t: "Espresso ist nicht stärker", x: "Ein Espresso hat rund 63 mg, ein Becher Filterkaffee oft deutlich mehr. Pro Tasse gewinnt meist der Filterkaffee." },
+  { i: "leaf", t: "Tee hat auch Koffein", x: "Schwarzer Tee hat etwa halb so viel Koffein wie Kaffee, grüner Tee noch etwas weniger." },
+  { i: "drop", t: "Ein Glas Wasser dazu", x: "Normale Mengen Kaffee entwässern kaum. Ein Glas Wasser dazu tut trotzdem gut." },
+  { i: "sun", t: "Der erste Kaffee", x: "Manche warten 60 bis 90 Minuten nach dem Aufstehen. Die Studienlage dazu ist dünn, ausprobieren schadet aber nicht." },
+  { i: "moon", t: "Letzter Kaffee früh", x: "Als Faustregel: Wer gut schlafen will, trinkt ab dem frühen Nachmittag lieber kein Koffein mehr." },
+  { i: "heart", t: "Auch Schokolade zählt", x: "30 Gramm dunkle Schokolade enthalten ungefähr 25 mg Koffein." },
+  { i: "zap", t: "Entkoffeiniert ist nicht null", x: "Koffeinfreier Kaffee enthält meist noch 2 bis 15 mg pro Tasse." },
+  { i: "coffee", t: "Deutschland trinkt Kaffee", x: "Im Schnitt trinken wir hier rund 160 Liter Kaffee pro Kopf und Jahr." },
+  { i: "pulse", t: "Deine Gene reden mit", x: "Wie schnell du Koffein abbaust, hängt auch von deinen Genen ab. Manche merken eine Tasse sofort, andere kaum." },
+  { i: "bulb", t: "Rauchen und Pille", x: "Rauchen beschleunigt den Koffeinabbau, die Antibabypille verlangsamt ihn." },
+  { i: "alert", t: "Medikamente", x: "Manche Medikamente verstärken die Wirkung von Koffein. Bei Dauermedikation im Zweifel kurz in der Apotheke fragen." },
+  { i: "shield", t: "Kinder und Jugendliche", x: "Für sie nennt die EFSA etwa 3 mg pro Kilogramm Körpergewicht als unbedenklich. Energy Drinks sind nichts für Kinder." },
+  { i: "trophy", t: "Koffein als Waffe", x: "Die Kaffeepflanze macht Koffein, um Fressfeinde fernzuhalten. Für Insekten ist es ein Nervengift." },
+  { i: "sun", t: "Bohnen sind Kerne", x: "Kaffeebohnen sind die Samen einer Kirsche, der Kaffeekirsche." },
+  { i: "clock", t: "Nach 15 Minuten", x: "Viele spüren Koffein schon nach etwa 15 bis 45 Minuten." },
+  { i: "coffee", t: "Kaffee-Weisheit", x: "Erst Kaffee, dann Menschen." },
+  { i: "zap", t: "Kaffee-Weisheit", x: "Koffein: weil Aufstehen allein keine Lösung ist." },
+  { i: "flame", t: "Kaffee-Weisheit", x: "Ich zittere nicht vom Kaffee. Ich tanze nur dem Wochenende entgegen." },
+  { i: "sun", t: "Kaffee-Weisheit", x: "Der Montag ist nur eine Tasse weit entfernt." },
+  { i: "trophy", t: "Kaffee-Weisheit", x: "Eine Tasse für den Körper, eine für den Kopf, eine für den Mut." },
+  { i: "bulb", t: "Kaffee-Weisheit", x: "Gute Ideen kommen meistens zwischen dem zweiten Kaffee und dem Zittern." }
 ],
 en: [
-  { i: 'clock', t: 'Peak after an hour', x: 'Caffeine reaches its highest level in your blood after 30 to 60 minutes.' },
-  { i: 'pulse', t: 'Half-life: 5 hours', x: 'After about 5 hours, half of your caffeine is still active in your body.' },
-  { i: 'shield', t: '400 mg is the limit', x: 'Up to 400 mg a day is considered safe for healthy adults (EFSA).' },
-  { i: 'zap', t: 'Not all at once', x: 'Avoid single doses above 200 mg. Spread your intake instead.' },
-  { i: 'heart', t: 'During pregnancy', x: 'Pregnant women should have no more than 200 mg of caffeine per day.' },
-  { i: 'moon', t: 'Caffeine steals deep sleep', x: 'Taken late, caffeine disturbs deep sleep even if you fall asleep easily.' },
-  { i: 'alert', t: 'Too much makes you jittery', x: 'Palpitations, restlessness, shaking and stomach trouble can be signs of an overdose.' },
-  { i: 'bulb', t: 'Tiredness is only hidden', x: 'Caffeine blocks adenosine receptors. The tired signal is masked, not removed.' },
-  { i: 'flame', t: 'Your body gets used to it', x: 'Regular drinkers need more for the same effect. Quitting can cause headaches.' },
-  { i: 'zap', t: 'Energy drinks: double trouble', x: 'Often more caffeine than a cup of coffee, plus lots of sugar.' }
+  { i: "clock", t: "Peak after an hour", x: "Caffeine reaches its highest level in your blood after 30 to 60 minutes." },
+  { i: "pulse", t: "Half-life: about 5 hours", x: "After about 5 hours, half of your caffeine is still active in your body. For some people it takes much longer." },
+  { i: "shield", t: "400 mg is the limit", x: "Up to 400 mg a day is considered safe for healthy adults (EFSA)." },
+  { i: "zap", t: "Not all at once", x: "Avoid single doses above 200 mg. Spread your intake instead." },
+  { i: "heart", t: "During pregnancy", x: "Pregnant women should have no more than 200 mg of caffeine per day." },
+  { i: "moon", t: "Caffeine steals deep sleep", x: "Taken late, caffeine disturbs deep sleep even if you fall asleep easily." },
+  { i: "alert", t: "Too much makes you jittery", x: "Palpitations, restlessness, shaking and stomach trouble can be signs of an overdose." },
+  { i: "bulb", t: "Tiredness is only hidden", x: "Caffeine blocks adenosine receptors. The tired signal is masked, not removed." },
+  { i: "flame", t: "Your body gets used to it", x: "Regular drinkers need more for the same effect. Quitting can cause headaches." },
+  { i: "zap", t: "Energy drinks: double trouble", x: "Often more caffeine than a cup of coffee, plus lots of sugar." },
+  { i: "coffee", t: "Espresso is not stronger", x: "An espresso has about 63 mg, a mug of filter coffee often a lot more. Per cup, filter coffee usually wins." },
+  { i: "leaf", t: "Tea has caffeine too", x: "Black tea has about half the caffeine of coffee, green tea a bit less." },
+  { i: "drop", t: "Add a glass of water", x: "Normal amounts of coffee barely dehydrate you. A glass of water on the side is still a good idea." },
+  { i: "sun", t: "The first coffee", x: "Some wait 60 to 90 minutes after waking up. The evidence is thin, but trying it does no harm." },
+  { i: "moon", t: "Last coffee early", x: "As a rule of thumb: if you want to sleep well, skip caffeine from the early afternoon on." },
+  { i: "heart", t: "Chocolate counts too", x: "30 grams of dark chocolate contain about 25 mg of caffeine." },
+  { i: "zap", t: "Decaf is not zero", x: "Decaffeinated coffee usually still has 2 to 15 mg per cup." },
+  { i: "coffee", t: "Germany loves coffee", x: "On average, people here drink around 160 litres of coffee per head per year." },
+  { i: "pulse", t: "Your genes have a say", x: "How fast you break down caffeine depends on your genes too. Some feel one cup right away, others barely." },
+  { i: "bulb", t: "Smoking and the pill", x: "Smoking speeds up caffeine breakdown, the contraceptive pill slows it down." },
+  { i: "alert", t: "Medication", x: "Some medicines strengthen the effect of caffeine. If you take medication regularly, ask your pharmacist." },
+  { i: "shield", t: "Children and teens", x: "For them EFSA names about 3 mg per kilogram of body weight as safe. Energy drinks are not for kids." },
+  { i: "trophy", t: "Caffeine as a weapon", x: "The coffee plant makes caffeine to keep predators away. To insects it is a nerve poison." },
+  { i: "sun", t: "Beans are pits", x: "Coffee beans are the seeds of a cherry, the coffee cherry." },
+  { i: "clock", t: "After 15 minutes", x: "Many people feel caffeine after about 15 to 45 minutes." },
+  { i: "coffee", t: "Coffee wisdom", x: "Coffee first, people second." },
+  { i: "zap", t: "Coffee wisdom", x: "Caffeine: because getting up alone is not a solution." },
+  { i: "flame", t: "Coffee wisdom", x: "I'm not shaking from the coffee. I'm just dancing toward the weekend." },
+  { i: "sun", t: "Coffee wisdom", x: "Monday is only one cup away." },
+  { i: "trophy", t: "Coffee wisdom", x: "One cup for the body, one for the mind, one for the courage." },
+  { i: "bulb", t: "Coffee wisdom", x: "Good ideas usually arrive between the second coffee and the shakes." }
 ]};
 // Getränkenamen kommen aus der Datenbank (deutsch). Bekannte Namen werden im englischen Modus übersetzt.
 const DRINK_EN = { 'filterkaffee': 'Filter coffee', 'latte macchiato': 'Latte macchiato', 'cold brew': 'Cold brew', 'schwarzer tee': 'Black tea', 'grüner tee': 'Green tea',

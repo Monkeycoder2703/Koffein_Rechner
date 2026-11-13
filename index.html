@@ -216,6 +216,12 @@
       <h2 data-i18n="acc_title"></h2>
       <p class="sub"><span data-i18n="acc_as"></span><b id="who2"></b></p>
       <button id="logout2" class="btn ghost block" type="button"><svg class="ico"><use href="#i-logout"/></svg><span data-i18n="logout"></span></button>
+      <div id="fx-box" hidden>
+        <hr class="div">
+        <h3 data-i18n="fx_title"></h3>
+        <p class="sub" data-i18n="fx_hint"></p>
+        <button id="fx-toggle" class="btn ghost block" type="button"></button>
+      </div>
       <hr class="div">
       <h3 class="danger-t" data-i18n="del_title"></h3>
       <p class="sub" data-i18n="del_sub"></p>
@@ -265,6 +271,7 @@
 </div>
 <div id="toasts" aria-live="polite"></div>
 <div id="fx" aria-hidden="true"></div>
+<div id="eq" aria-hidden="true"></div>
 
 <script src="supabase.js"></script>
 <script src="config.js"></script>
