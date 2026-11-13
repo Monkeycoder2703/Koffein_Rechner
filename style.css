@@ -19,8 +19,8 @@
 
 *{box-sizing:border-box;margin:0}
 [hidden]{display:none!important}
-html{color-scheme:dark;background:var(--bg);scroll-behavior:smooth}
-body{font:400 1rem/1.55 var(--font);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
+html{color-scheme:dark;background:var(--bg);scroll-behavior:smooth;overflow-x:clip;overscroll-behavior-x:none}
+body{overflow-x:clip;max-width:100%;font:400 1rem/1.55 var(--font);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 65%,transparent);outline-offset:2px}
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
@@ -320,6 +320,8 @@ dialog .row{display:flex;gap:var(--s3);justify-content:flex-end;flex-wrap:wrap}
   .brand{font-size:1rem;gap:var(--s2)}.brand-mark{width:36px;height:36px}
   .chaos-btn span{display:none}.chaos-btn{padding:0 var(--s3)}
   .top{padding-inline:var(--s3)}
+  .tools{gap:var(--s1);min-width:0}
+  #userbox .who,#who{max-width:22vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .hero-cup{width:min(180px,55%)}
   .podium{gap:var(--s2)}
 }
