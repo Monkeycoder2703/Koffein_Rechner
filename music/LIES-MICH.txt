@@ -1,0 +1,15 @@
+Hier kommen die Songs für den Chaos Mode rein.
+
+1) Lege die Audiodateien in diesen Ordner (mp3, ogg, m4a, wav, opus, aac).
+   Dateinamen: Buchstaben, Zahlen, Leerzeichen, - _ . ( ) erlaubt.
+2) Trage sie in playlist.json ein, zum Beispiel:
+
+   { "tracks": [
+       { "title": "Mein Song",  "file": "mein-song.mp3" },
+       { "title": "Noch einer", "file": "noch-einer.mp3" }
+   ] }
+
+Ist die Liste leer, spielt der Chaos Mode seinen eingebauten Beat.
+
+Hinweis: Auf GitHub Pages kann jeder die Dateien herunterladen. Nutze nur Musik,
+für die du die Rechte hast (selbst gemacht, Lizenz frei, z. B. Creative Commons).

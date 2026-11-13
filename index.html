@@ -4,111 +4,275 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Auf GitHub Pages gibt es keine Server-Header: CSP hier. Erlaubt nur dieselbe Seite und Supabase. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
-<title>Koffein Rechner</title>
+<meta name="description" content="Koffein Rechner: Trag deine Getränke ein und sieh, wie viel Koffein du heute schon hattest.">
+<meta name="theme-color" content="#0C0709">
+<title>Koffein Rechner – Dein Tag in Tassen</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Koffein">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<header><h1>☕ Koffein Rechner</h1><div id="userbox" hidden><span id="who"></span> <button id="logout" class="ghost">Abmelden</button></div></header>
+<body class="booting">
 
-<main id="auth-view">
-  <section class="card" id="card-login">
-    <h2 id="auth-title">Anmelden</h2>
-    <form id="auth-form">
-      <label>E-Mail <input id="e" type="email" required maxlength="254" autocomplete="email"></label>
-      <label id="user-row" hidden>Benutzername (öffentlich im Leaderboard) <input id="u" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" autocomplete="nickname"></label>
-      <label>Passwort <input id="p" type="password" required minlength="10" maxlength="72" autocomplete="current-password"></label>
-      <input id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
-      <p id="auth-msg" role="alert"></p>
-      <button type="submit" id="auth-btn">Anmelden</button>
-    </form>
-    <button id="toggle" class="ghost">Noch kein Konto? Registrieren</button>
-    <button id="forgot-link" class="ghost">Passwort vergessen?</button>
-    <p class="hint">Dein Benutzername ist im Leaderboard sichtbar. Verwende keinen echten Namen. Deine E-Mail sieht niemand.</p>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M10 2v2M14 2v2M6 2v2"/><path d="M16 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h13v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7Z"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.7V17c0 .6-.5 1-1.2 1.2C7.800 18.700 7 20.200 7 22M14 14.7V17c0 .6.5 1 1.2 1.2 1 .5 1.800 2 1.800 3.800M18 2H6v7a6 6 0 0 0 12 0V2Z"/></symbol>
+  <symbol id="i-crown" viewBox="0 0 24 24"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7ZM5 20h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.600-7 10-7 10 7 10 7-3.600 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M9.900 4.200A10 10 0 0 1 12 5c6.400 0 10 7 10 7a17 17 0 0 1-2.200 3.100M6.600 6.600A17 17 0 0 0 2 12s3.600 7 10 7a9.700 9.700 0 0 0 5.400-1.600M2 2l20 20"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.700 1.500-2.500 1-.9 1.500-2.200 1.500-3.500A6 6 0 0 0 6 8c0 1 .2 2.200 1.500 3.500.7.700 1.300 1.500 1.500 2.500M9 18h6M10 22h4"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.700 18-8-14a2 2 0 0 0-3.500 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.700-3ZM12 9v4M12 17h.01"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16v-6M12 16V6M17 16v-4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M2 12h2M20 12h2M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.500 14.500A2.500 2.500 0 0 0 11 12c0-1.400-.5-2-1-3-1.100-2.100-.2-4 2-6 .5 2.500 2 4.900 4 6.500 2 1.600 3 3.500 3 5.500a7 7 0 1 1-14 0c0-1.200.4-2.400 1-3 0 1.700 1 3 2.500 3Z"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.900-3-5.500S13 5 12 2c-1 3-2.500 5.500-4.500 7.500S5 13 5 15a7 7 0 0 0 7 7Z"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M11 20A7 7 0 0 1 9.800 6.100C15.500 5 17 4.500 19 2c1 2 2 4.500 2 8 0 5.500-4.800 10-10 10ZM2 21c0-3 1.900-5.500 6-7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+  <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8V4zM19 5v14"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+</svg>
+
+<div id="bg" aria-hidden="true"><i class="dots"></i><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><i class="blob b4"></i><i class="grain"></i><i class="strobe s1"></i><i class="strobe s2"></i><i class="scan"></i></div>
+
+<div id="boot" aria-hidden="true"><div class="boot-mark"><svg class="ico"><use href="#i-coffee"/></svg></div></div>
+
+<header class="top">
+  <a class="brand" href="./" data-i18n-aria="brand_aria">
+    <span class="brand-mark"><svg class="ico"><use href="#i-coffee"/></svg></span><span data-i18n="brand"></span>
+  </a>
+  <div class="tools">
+    <button id="chaos" class="chaos-btn" type="button" hidden aria-pressed="false" data-locked="true" data-i18n-aria="chaos_aria">
+      <svg class="ico"><use href="#i-zap"/></svg><span id="chaos-t" data-i18n="chaos_btn"></span><svg class="ico lockico"><use href="#i-lock"/></svg><i class="unlock-bar"></i>
+    </button>
+    <button id="lang" class="icon-btn lang-btn" type="button"><span id="lang-t">EN</span></button>
+    <div id="userbox" hidden>
+      <span class="chip"><svg class="ico"><use href="#i-user"/></svg><span id="who"></span></span>
+      <button id="logout" class="icon-btn" type="button" data-i18n-aria="logout" data-tip><svg class="ico"><use href="#i-logout"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ Anmelden ============ -->
+<main id="auth-view" class="auth" hidden>
+  <section class="auth-hero">
+    <p class="eyebrow"><svg class="ico"><use href="#i-flame"/></svg><span data-i18n="eyebrow"></span></p>
+    <h1 class="display"><span data-i18n="h1a"></span><br><span data-i18n="h1b"></span> <span class="hl" data-i18n="h1c"></span></h1>
+    <div class="hero-row">
+      <div id="hero-cup" class="hero-cup cup cup--demo"></div>
+      <ul class="points">
+        <li><span class="pt-ico"><svg class="ico"><use href="#i-coffee"/></svg></span><div><b data-i18n="pt1_t"></b><span class="t" data-i18n="pt1_x"></span></div></li>
+        <li><span class="pt-ico"><svg class="ico"><use href="#i-shield"/></svg></span><div><b data-i18n="pt2_t"></b><span class="t" data-i18n="pt2_x"></span></div></li>
+        <li><span class="pt-ico"><svg class="ico"><use href="#i-trophy"/></svg></span><div><b data-i18n="pt3_t"></b><span class="t" data-i18n="pt3_x"></span></div></li>
+      </ul>
+    </div>
   </section>
-  <section class="card" id="card-forgot" hidden>
-    <h2>Passwort zurücksetzen</h2>
-    <form id="forgot-form">
-      <label>E-Mail <input id="fe" type="email" required maxlength="254" autocomplete="email"></label>
-      <p id="forgot-msg" role="alert"></p>
-      <button type="submit">Link senden</button>
-    </form>
-    <button class="ghost back">Zurück</button>
-  </section>
-  <section class="card" id="card-reset" hidden>
-    <h2>Neues Passwort</h2>
-    <form id="reset-form">
-      <label>Neues Passwort (min. 10 Zeichen) <input id="rp" type="password" required minlength="10" maxlength="72" autocomplete="new-password"></label>
-      <p id="reset-msg" role="alert"></p>
-      <button type="submit">Passwort speichern</button>
-    </form>
-  </section>
+
+  <div class="auth-panel">
+    <section class="panel" id="card-login">
+      <h2 id="auth-title" data-i18n="auth_title_login"></h2>
+      <p class="sub" id="auth-sub" data-i18n="auth_sub_login"></p>
+      <form id="auth-form" novalidate>
+        <div class="field"><label for="e" data-i18n="email"></label><input id="e" type="email" required maxlength="254" autocomplete="email" data-i18n-ph="email_ph"></div>
+        <div class="field" id="user-row" hidden><label for="u" data-i18n="username"></label><input id="u" minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" autocomplete="nickname" data-i18n-ph="username_ph"><small data-i18n="username_hint"></small></div>
+        <div class="field"><label for="p" data-i18n="password"></label>
+          <div class="pw"><input id="p" type="password" required minlength="10" maxlength="72" autocomplete="current-password" data-i18n-ph="password_ph">
+            <button class="icon-btn" type="button" data-toggle-pw="p" data-i18n-aria="show_pw"><svg class="ico"><use href="#i-eye"/></svg></button></div>
+          <div id="strength" class="strength" data-s="0" hidden><i></i><i></i><i></i><i></i></div>
+        </div>
+        <input id="hp" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p id="auth-msg" class="msg" role="alert"></p>
+        <button type="submit" id="auth-btn" class="btn block"><span id="auth-btn-t" data-i18n="btn_login"></span></button>
+      </form>
+      <div class="auth-links">
+        <button id="toggle" class="link" type="button" data-i18n="toggle_to_reg"></button>
+        <button id="forgot-link" class="link" type="button" data-i18n="forgot_link"></button>
+      </div>
+      <p class="fine" data-i18n="fine_email"></p>
+    </section>
+
+    <section class="panel" id="card-forgot" hidden>
+      <h2 data-i18n="forgot_title"></h2>
+      <p class="sub" data-i18n="forgot_sub"></p>
+      <form id="forgot-form">
+        <div class="field"><label for="fe" data-i18n="email"></label><input id="fe" type="email" required maxlength="254" autocomplete="email" data-i18n-ph="email_ph"></div>
+        <p id="forgot-msg" class="msg" role="alert"></p>
+        <button type="submit" class="btn block"><span data-i18n="send_link"></span></button>
+      </form>
+      <div class="auth-links"><button class="link back" type="button" data-i18n="back_login"></button></div>
+    </section>
+
+    <section class="panel" id="card-reset" hidden>
+      <h2 data-i18n="reset_title"></h2>
+      <p class="sub" data-i18n="reset_sub"></p>
+      <form id="reset-form">
+        <div class="field"><label for="rp" data-i18n="new_pw"></label>
+          <div class="pw"><input id="rp" type="password" required minlength="10" maxlength="72" autocomplete="new-password">
+            <button class="icon-btn" type="button" data-toggle-pw="rp" data-i18n-aria="show_pw"><svg class="ico"><use href="#i-eye"/></svg></button></div></div>
+        <p id="reset-msg" class="msg" role="alert"></p>
+        <button type="submit" class="btn block"><span data-i18n="save_pw"></span></button>
+      </form>
+    </section>
+
+    <section class="panel" id="card-done" hidden>
+      <div class="done">
+        <div class="done-ico"><svg class="ico"><use href="#i-mail"/></svg></div>
+        <h2 data-i18n="done_title"></h2>
+        <p class="sub" data-i18n="done_sub"></p>
+        <button class="btn ghost back" type="button"><svg class="ico"><use href="#i-back"/></svg><span data-i18n="to_login"></span></button>
+      </div>
+    </section>
+  </div>
 </main>
 
-<main id="app-view" hidden>
-  <nav>
-    <button data-tab="dash" class="active">Dashboard</button>
-    <button data-tab="board">Leaderboard</button>
-    <button data-tab="suggest">Vorschlag</button>
-    <button data-tab="account">Konto</button>
+<!-- ============ App ============ -->
+<main id="app-view" class="app" hidden>
+  <nav class="tabs" id="main-tabs" role="tablist" data-i18n-aria="tabs_aria">
+    <span class="tab-ind" aria-hidden="true"></span>
+    <button role="tab" aria-selected="true" data-tab="dash" type="button"><svg class="ico"><use href="#i-coffee"/></svg><span data-i18n="tab_today"></span></button>
+    <button role="tab" aria-selected="false" data-tab="board" type="button"><svg class="ico"><use href="#i-trophy"/></svg><span data-i18n="tab_board"></span></button>
+    <button role="tab" aria-selected="false" data-tab="suggest" type="button"><svg class="ico"><use href="#i-bulb"/></svg><span data-i18n="tab_suggest"></span></button>
+    <button role="tab" aria-selected="false" data-tab="account" type="button"><svg class="ico"><use href="#i-user"/></svg><span data-i18n="tab_account"></span></button>
   </nav>
 
   <section id="tab-dash" class="tab">
-    <div class="card">
-      <h2>Was hast du getrunken?</h2>
-      <select id="drink"></select>
-      <p id="preview" class="hint"></p>
-      <button id="add">Hinzufügen</button>
+    <div class="dash is-loading" id="dash">
+      <div class="stage">
+        <div id="cup" class="cup"></div>
+        <div class="reading"><span class="big" id="total">0</span><span class="unit">mg</span></div>
+        <p class="left-line" id="left-line"><span id="ll-pre"></span><b id="remaining">400</b><span id="ll-post"></span></p>
+        <div class="track" id="track" role="progressbar" aria-valuemin="0" aria-valuemax="400" aria-valuenow="0" data-i18n-aria="progress_aria"><i id="fill"></i></div>
+        <p class="pill" id="pill"><svg class="ico"><use href="#i-sun"/></svg><span id="warn"></span></p>
+      </div>
+
+      <div>
+        <div class="sec-h"><h2 data-i18n="what_drink"></h2></div>
+        <div id="drinks" class="drinks" role="radiogroup" data-i18n-aria="pick_aria"></div>
+        <div class="sizes" id="sizes" hidden>
+          <div class="sec-h"><h3 data-i18n="size_h"></h3><small id="size-name"></small></div>
+          <div class="size-grid" id="size-grid" role="radiogroup" data-i18n-aria="size_h"></div>
+        </div>
+        <div class="addbar">
+          <p class="sel-sum" id="preview" aria-live="polite"></p>
+          <button id="add" class="btn" type="button" disabled><svg class="ico"><use href="#i-plus"/></svg><span data-i18n="add"></span></button>
+        </div>
+
+        <div class="sec-h today"><h2 data-i18n="today_h"></h2><small id="count"></small></div>
+        <ul id="list" class="log"></ul>
+      </div>
     </div>
-    <div class="card">
-      <h2>Heute</h2>
-      <div class="stats"><div><b id="total">0</b><span>mg getrunken</span></div><div><b id="remaining">400</b><span>mg noch möglich</span></div></div>
-      <div class="bar"><div id="fill"></div></div>
-      <p id="warn" class="err"></p>
-      <ul id="list" class="list"></ul>
-    </div>
-    <p class="hint">Richtwert: max. 400 mg/Tag für gesunde Erwachsene (EFSA). Das ist keine medizinische Beratung.</p>
   </section>
 
-  <section id="tab-board" class="tab" hidden>
-    <div class="card">
-      <div class="seg"><button data-p="day" class="active">Heute</button><button data-p="week">Woche</button><button data-p="month">Monat</button></div>
-      <ol id="board" class="list"></ol>
+  <section id="tab-board" class="tab narrow" hidden>
+    <div class="sec-h"><h2 data-i18n="board_h"></h2><small data-i18n="board_sub"></small></div>
+    <div class="tabs seg" id="seg" role="tablist" data-i18n-aria="seg_aria">
+      <span class="tab-ind" aria-hidden="true"></span>
+      <button role="tab" aria-selected="true" data-p="day" type="button" data-i18n="p_day"></button>
+      <button role="tab" aria-selected="false" data-p="week" type="button" data-i18n="p_week"></button>
+      <button role="tab" aria-selected="false" data-p="month" type="button" data-i18n="p_month"></button>
     </div>
+    <div id="board"></div>
   </section>
 
-  <section id="tab-suggest" class="tab" hidden>
-    <div class="card">
-      <h2>Getränk vorschlagen</h2>
+  <section id="tab-suggest" class="tab narrow" hidden>
+    <div class="panel">
+      <h2 data-i18n="sg_title"></h2>
+      <p class="sub" data-i18n="sg_sub"></p>
       <form id="sg-form">
-        <label>Name <input id="sg-name" required maxlength="60"></label>
-        <label>Portion (z. B. 250 ml) <input id="sg-portion" maxlength="30"></label>
-        <label>Koffein in mg (optional) <input id="sg-mg" type="number" min="0" max="1000"></label>
-        <p id="sg-msg" role="status"></p>
-        <button type="submit">Vorschlag senden</button>
+        <div class="field"><label for="sg-name" data-i18n="sg_name"></label><input id="sg-name" required maxlength="60" data-i18n-ph="sg_name_ph"></div>
+        <div class="field"><label for="sg-portion" data-i18n="sg_portion"></label><input id="sg-portion" required maxlength="30" data-i18n-ph="sg_portion_ph"></div>
+        <div class="field"><label for="sg-mg" data-i18n="sg_mg"></label><input id="sg-mg" type="number" min="0" max="1000" required inputmode="numeric" data-i18n-ph="sg_mg_ph"><small data-i18n="sg_mg_hint"></small></div>
+        <p id="sg-msg" class="msg" role="alert"></p>
+        <button type="submit" class="btn block"><svg class="ico"><use href="#i-send"/></svg><span data-i18n="sg_send"></span></button>
       </form>
     </div>
   </section>
 
-  <section id="tab-account" class="tab" hidden>
-    <div class="card">
-      <h2>Konto löschen</h2>
-      <p class="hint">Löscht dein Konto, deine E-Mail und alle deine Einträge unwiderruflich.</p>
-      <form id="del-form">
-        <label>Zur Bestätigung Passwort eingeben <input id="del-pw" type="password" required autocomplete="current-password"></label>
-        <p id="del-msg" role="alert"></p>
-        <button type="submit" class="danger">Konto endgültig löschen</button>
-      </form>
+  <section id="tab-account" class="tab narrow" hidden>
+    <div class="panel">
+      <h2 data-i18n="acc_title"></h2>
+      <p class="sub"><span data-i18n="acc_as"></span><b id="who2"></b></p>
+      <button id="logout2" class="btn ghost block" type="button"><svg class="ico"><use href="#i-logout"/></svg><span data-i18n="logout"></span></button>
+      <hr class="div">
+      <h3 class="danger-t" data-i18n="del_title"></h3>
+      <p class="sub" data-i18n="del_sub"></p>
+      <button id="del-open" class="btn danger block" type="button"><svg class="ico"><use href="#i-trash"/></svg><span data-i18n="del_open"></span></button>
     </div>
   </section>
 </main>
 
-<div id="loader" hidden>
-  <div class="loader-box"><div class="spinner"></div><h3>Wusstest du?</h3><p id="fact"></p></div>
+<dialog id="del-dialog" aria-labelledby="del-title">
+  <form id="del-form" method="dialog">
+    <h3 id="del-title" data-i18n="dlg_title"></h3>
+    <p data-i18n="dlg_text"></p>
+    <div class="field"><label for="del-pw" data-i18n="password"></label><input id="del-pw" type="password" required maxlength="72" autocomplete="current-password"></div>
+    <p id="del-msg" class="msg" role="alert"></p>
+    <div class="row">
+      <button type="button" id="del-cancel" class="btn ghost"><span data-i18n="cancel"></span></button>
+      <button type="submit" class="btn danger"><span data-i18n="del_confirm"></span></button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="chaos-dialog" aria-labelledby="chaos-title">
+  <form method="dialog">
+    <h3 id="chaos-title" data-i18n="warn_title"></h3>
+    <p data-i18n="warn_text"></p>
+    <div class="row">
+      <button type="button" id="chaos-cancel" class="btn ghost"><span data-i18n="cancel"></span></button>
+      <button type="button" id="chaos-go" class="btn"><svg class="ico"><use href="#i-zap"/></svg><span data-i18n="warn_go"></span></button>
+    </div>
+  </form>
+</dialog>
+
+<div id="loader" aria-live="polite" aria-hidden="true">
+  <div class="ld">
+    <div class="pour cup" id="ld-cup"></div>
+    <p class="ld-kicker"><svg class="ico"><use href="#i-pulse"/></svg><span data-i18n="ld_kicker"></span></p>
+    <div class="ld-fact" id="ld-fact"></div>
+    <div class="ld-bar"><i></i></div>
+  </div>
 </div>
+
+<div id="ticker" class="ticker" aria-hidden="true"><div class="tk" id="tk"></div></div>
+<div id="player" hidden>
+  <svg class="ico"><use href="#i-music"/></svg><span class="np" id="np"></span>
+  <button id="mute" class="icon-btn" type="button" data-i18n-aria="music_mute" data-tip><svg class="ico"><use href="#i-volume"/></svg></button>
+  <button id="skip" class="icon-btn" type="button" data-i18n-aria="music_next" data-tip><svg class="ico"><use href="#i-skip"/></svg></button>
+</div>
+<div id="toasts" aria-live="polite"></div>
+<div id="fx" aria-hidden="true"></div>
+
 <script src="supabase.js"></script>
 <script src="config.js"></script>
+<script src="i18n.js"></script>
+<script src="chaos.js"></script>
+<script src="water.js"></script>
+<script src="ui.js"></script>
+<script src="pwa.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
