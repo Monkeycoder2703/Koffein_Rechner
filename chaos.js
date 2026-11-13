@@ -17,7 +17,7 @@ const Chaos = (() => {
     fx().append(svg); setTimeout(() => svg.remove(), 600);
   }
   function rain() {
-    if (fx().childElementCount > 70) return;
+    if (fx().childElementCount > 40) return;
     const b = document.createElement('i'); b.className = 'bean rain';
     b.style.left = Math.random() * 100 + 'vw'; b.style.setProperty('--t', 1.8 + Math.random() * 1.6 + 's'); b.style.setProperty('--rot', (Math.random() * 900 - 450) + 'deg');
     b.style.setProperty('--sz', (0.7 + Math.random() * 1.1).toFixed(2));
@@ -29,7 +29,7 @@ const Chaos = (() => {
     root.style.setProperty('--beat', (60 / b).toFixed(3) + 's'); // 150 BPM = 0,4 s; Licht blitzt höchstens ~2,5x pro Sekunde
   }
   function confetti() {
-    if (fx().childElementCount > 90) return;
+    if (fx().childElementCount > 45) return;
     const c = document.createElement('i'); c.className = 'confetti';
     c.style.left = Math.random() * 100 + 'vw'; c.style.setProperty('--hh', Math.floor(Math.random() * 360));
     c.style.setProperty('--t', 1.4 + Math.random() * 1.4 + 's'); c.style.setProperty('--rot', (Math.random() * 1200 - 600) + 'deg');
@@ -47,23 +47,77 @@ const Chaos = (() => {
 
   /* ---- Musik ---- */
   function setNow(txt) { $('np').textContent = t('now_playing') + txt; }
-  async function loadTracks() {
-    if (loaded) return; loaded = true;
+  /* Playlists: music/playlist.json = {playlists:[{id,name,tracks:[{title,file}]}]}. Die NSFW-Playlist liegt verschlüsselt in music/n/ und braucht den Code. */
+  const FILE_OK = /^(?!.*\.\.)[\w\-. ()äöüÄÖÜß]+(\/[\w\-. ()äöüÄÖÜß]+)*\.(mp3|ogg|m4a|wav|opus|aac|bin)$/i;
+  let lists = [], plId = 'all', nsfwKey = null, urlNow = null, listeners = [];
+  try { plId = localStorage.getItem('kr-pl') || 'all'; } catch { /* egal */ }
+  const clean = (arr) => (arr || []).filter((x) => x && typeof x.file === 'string' && FILE_OK.test(x.file))
+    .map((x) => ({ title: String(x.title || x.file).slice(0, 90), file: x.file, bpm: Number(x.bpm) || 0 }));
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [a[i], a[k]] = [a[k], a[i]]; } return a; };
+  function rebuild() {
+    let src;
+    if (plId === 'all') src = lists.filter((l) => !l.enc).flatMap((l) => l.tracks);
+    else if (plId === 'synth') src = [];
+    else { const l = lists.find((x) => x.id === plId); src = l ? l.tracks : lists.filter((x) => !x.enc).flatMap((x) => x.tracks); }
+    tracks = shuffle(src.slice()); ti = 0;
+  }
+  let loadP = null;
+  const loadTracks = () => loadP || (loadP = doLoad());
+  async function doLoad() {
+    loaded = true;
     try {
       const r = await fetch('music/playlist.json', { cache: 'no-store' }); const j = await r.json();
-      tracks = (j.tracks || []).filter((x) => x && typeof x.file === 'string' && /^[\w\-. ()äöüÄÖÜß]+\.(mp3|ogg|m4a|wav|opus|aac)$/i.test(x.file))
-        .map((x) => ({ title: String(x.title || x.file).slice(0, 60), file: x.file, bpm: Number(x.bpm) || 0 }));
-      for (let i = tracks.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [tracks[i], tracks[k]] = [tracks[k], tracks[i]]; }
-    } catch { tracks = []; }
-    ready = true;
+      lists = (j.playlists || (j.tracks ? [{ id: 'main', name: 'Playlist', tracks: j.tracks }] : []))
+        .map((p) => ({ id: String(p.id || '').replace(/[^\w-]/g, ''), name: String(p.name || p.id).slice(0, 40), tracks: clean(p.tracks) })).filter((p) => p.id && p.tracks.length);
+    } catch { lists = []; }
+    try { const c = localStorage.getItem('kr-nsfw'); if (c) await unlock(c, true); } catch { /* egal */ }
+    rebuild(); ready = true; listeners.forEach((f) => f());
   }
-  function playTrack() {
+  async function derive(code, salt) {
+    const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  }
+  // Code prüfen: Entschlüsselung der Titelliste klappt nur mit dem richtigen Code
+  async function unlock(code, quiet) {
+    if (!crypto || !crypto.subtle) return false;
+    try {
+      const buf = new Uint8Array(await (await fetch('music/n/list.bin', { cache: 'no-store' })).arrayBuffer());
+      const key = await derive(String(code).trim(), buf.slice(0, 16));
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(16, 28) }, key, buf.slice(28));
+      const tr = clean(JSON.parse(new TextDecoder().decode(plain)));
+      nsfwKey = key; lists = lists.filter((l) => l.id !== 'nsfw'); lists.push({ id: 'nsfw', name: 'NSFW', enc: true, tracks: tr });
+      try { localStorage.setItem('kr-nsfw', String(code).trim()); } catch { /* egal */ }
+      if (!quiet) { rebuild(); listeners.forEach((f) => f()); }
+      return true;
+    } catch { return false; }
+  }
+  function lock() {
+    nsfwKey = null; lists = lists.filter((l) => l.id !== 'nsfw'); try { localStorage.removeItem('kr-nsfw'); } catch { /* egal */ }
+    if (plId === 'nsfw') setPlaylist('all'); else listeners.forEach((f) => f());
+  }
+  function setPlaylist(id) {
+    plId = id; try { localStorage.setItem('kr-pl', id); } catch { /* egal */ }
+    rebuild(); listeners.forEach((f) => f());
+    if (on) { stopMusic(); begin(); }
+  }
+  async function decTrack(tr) {
+    const buf = new Uint8Array(await (await fetch('music/' + tr.file.split('/').map(encodeURIComponent).join('/'))).arrayBuffer());
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, nsfwKey, buf.slice(12));
+    return URL.createObjectURL(new Blob([plain], { type: 'audio/mpeg' }));
+  }
+  async function playTrack() {
     const tr = tracks[ti % tracks.length], my = session;
-    if (audio) { audio.pause(); audio.onended = null; }
-    audio = new Audio('music/' + encodeURIComponent(tr.file)); audio.volume = .85; audio.muted = muted;
-    audio.onended = () => { ti++; if (on && my === session) playTrack(); };
-    audio.onerror = () => { ti++; if (on && my === session && ti < tracks.length * 2) playTrack(); };
-    audio.play().catch(() => {}); setNow(tr.title); setBeat(tr.bpm || 128);
+    if (audio) { audio.pause(); audio.onended = null; audio.onerror = null; }
+    if (urlNow) { URL.revokeObjectURL(urlNow); urlNow = null; }
+    const au = new Audio(); audio = au; au.volume = .85; au.muted = muted;
+    const next = () => { ti++; if (on && my === session && audio === au) playTrack(); };
+    au.onended = next; au.onerror = () => { if (ti < tracks.length * 2) next(); };
+    setNow(tr.title); setBeat(tr.bpm || 128);
+    try {
+      if (/\.bin$/i.test(tr.file)) { const u = await decTrack(tr); if (!on || my !== session || audio !== au) { URL.revokeObjectURL(u); return; } urlNow = u; au.src = u; }
+      else au.src = 'music/' + tr.file.split('/').map(encodeURIComponent).join('/');
+      au.play().catch(() => {});
+    } catch { next(); }
   }
   function startSynth() {
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -91,6 +145,7 @@ const Chaos = (() => {
   }
   function stopMusic() {
     if (audio) { audio.pause(); audio.onended = null; audio.onerror = null; audio = null; }
+    if (urlNow) { URL.revokeObjectURL(urlNow); urlNow = null; }
     if (synth) { clearInterval(synth.id); synth.ctx.close().catch(() => {}); synth = null; }
   }
   function begin() { if (!on) return; if (tracks.length) playTrack(); else startSynth(); }
@@ -112,7 +167,7 @@ const Chaos = (() => {
     const tx = t('ticker').repeat(4); $('tk').textContent = tx + tx;
     $('player').hidden = false; setMuted(muted);
     setBeat(150);
-    if (!REDUCED) { rig(); timers.push(setInterval(bolt, 700), setInterval(rain, 160), setInterval(confetti, 70)); bolt(); }
+    if (!REDUCED) { rig(); timers.push(setInterval(bolt, 700), setInterval(rain, 160), setInterval(confetti, 110)); bolt(); }
     startMusic();
   }
   function stop() {
@@ -122,5 +177,5 @@ const Chaos = (() => {
     stopMusic(); $('player').hidden = true;
   }
   function relabel() { if (on) { $('tk').textContent = t('ticker').repeat(8); if (synth) setNow(t('synth_name')); else if (tracks.length) setNow(tracks[ti % tracks.length].title); } }
-  return { preload: loadTracks, get on() { return on; }, start, stop, skip, relabel, toggleMute: () => setMuted(!muted) };
+  return { preload: loadTracks, lists: () => lists, get plId() { return plId; }, get unlocked() { return !!nsfwKey; }, unlock, lock, setPlaylist, onChange: (f) => listeners.push(f), preloadDone: () => ready, get on() { return on; }, start, stop, skip, relabel, toggleMute: () => setMuted(!muted) };
 })();

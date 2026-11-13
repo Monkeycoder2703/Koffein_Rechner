@@ -1,1 +1,130 @@
-{ "tracks": [] }
+{
+ "playlists": [
+  {
+   "id": "creators-choise",
+   "name": "Creators Choice",
+   "tracks": [
+    {
+     "title": "Aditotoro, Marc Eggers und Paul Frege - Mon Amour (Original von Hecht)",
+     "file": "creators-choise/00-aditotoro-marc-eggers-und-paul-frege-mon.mp3"
+    },
+    {
+     "title": "Haindling - Bayern",
+     "file": "creators-choise/01-haindling-bayern.mp3"
+    },
+    {
+     "title": "Mehnersmoos - Bir",
+     "file": "creators-choise/02-mehnersmoos-bir.mp3"
+    },
+    {
+     "title": "Papa Nico - Staubsaugerlied",
+     "file": "creators-choise/03-papa-nico-staubsaugerlied.mp3"
+    },
+    {
+     "title": "Party Animals - Have You Ever Been Mellow",
+     "file": "creators-choise/04-party-animals-have-you-ever-been-mellow.mp3"
+    },
+    {
+     "title": "Patrick Sébastien - Toc toc",
+     "file": "creators-choise/05-patrick-sebastien-toc-toc.mp3"
+    },
+    {
+     "title": "Tream und treamiboii - 7 SÜNDEN",
+     "file": "creators-choise/06-tream-und-treamiboii-7-sunden.mp3"
+    },
+    {
+     "title": "Tream und treamiboii - KNUTSCHFLECK",
+     "file": "creators-choise/07-tream-und-treamiboii-knutschfleck.mp3"
+    }
+   ]
+  },
+  {
+   "id": "rock",
+   "name": "Rock",
+   "tracks": [
+    {
+     "title": "Böhse Onkelz - Wir ham' noch lange nicht genug",
+     "file": "rock/00-bohse-onkelz-wir-ham-noch-lange-nicht-ge.mp3"
+    },
+    {
+     "title": "Frei.Wild - Das Land der Vollidioten",
+     "file": "rock/01-frei-wild-das-land-der-vollidioten.mp3"
+    },
+    {
+     "title": "HaVexy - Hyperbaiter Disstrack",
+     "file": "rock/02-havexy-hyperbaiter-disstrack.mp3"
+    },
+    {
+     "title": "Liquido - Narcotic (Radio Edit)",
+     "file": "rock/03-liquido-narcotic-radio-edit.mp3"
+    },
+    {
+     "title": "Metallica - The Unforgiven",
+     "file": "rock/04-metallica-the-unforgiven.mp3"
+    },
+    {
+     "title": "Sportfreunde Stiller - Ein Kompliment",
+     "file": "rock/05-sportfreunde-stiller-ein-kompliment.mp3"
+    },
+    {
+     "title": "The Offspring - The Kids Aren't Alright",
+     "file": "rock/06-the-offspring-the-kids-aren-t-alright.mp3"
+    }
+   ]
+  },
+  {
+   "id": "techno",
+   "name": "Techno",
+   "tracks": [
+    {
+     "title": "D'Angello & Francis - Blade",
+     "file": "techno/00-d-angello-francis-blade.mp3"
+    },
+    {
+     "title": "D'Angello & Francis - Do You Know (Where Your Teenager Is)_",
+     "file": "techno/01-d-angello-francis-do-you-know-where-your.mp3"
+    },
+    {
+     "title": "Daciva, SRXPH und DSTYL - TRENTEKK",
+     "file": "techno/02-daciva-srxph-und-dstyl-trentekk.mp3"
+    },
+    {
+     "title": "Dr. Peacock und Billx - Trip to Lapland",
+     "file": "techno/03-dr-peacock-und-billx-trip-to-lapland.mp3"
+    },
+    {
+     "title": "Harris & Ford und Dirty Thirty - Scotland Rave",
+     "file": "techno/04-harris-ford-und-dirty-thirty-scotland-ra.mp3"
+    },
+    {
+     "title": "KROMA, New Beat Order, Seeko und Amero - Poison",
+     "file": "techno/05-kroma-new-beat-order-seeko-und-amero-poi.mp3"
+    },
+    {
+     "title": "Lil Texas - Spongebob",
+     "file": "techno/06-lil-texas-spongebob.mp3"
+    },
+    {
+     "title": "MadMaxCUX - TUFFE LISA",
+     "file": "techno/07-madmaxcux-tuffe-lisa.mp3"
+    },
+    {
+     "title": "Mr. Polska, Ski Aggu und Natte Visstick - Spring",
+     "file": "techno/08-mr-polska-ski-aggu-und-natte-visstick-sp.mp3"
+    },
+    {
+     "title": "Narfos und Expulze - Polkaholica",
+     "file": "techno/09-narfos-und-expulze-polkaholica.mp3"
+    },
+    {
+     "title": "TWXNY, Sxilwix und Innxcence - HEAVENLY JUMPSTYLE",
+     "file": "techno/10-twxny-sxilwix-und-innxcence-heavenly-jum.mp3"
+    },
+    {
+     "title": "UMBRELLA und VAMPXL - ONE TWO THREE FOUR",
+     "file": "techno/11-umbrella-und-vampxl-one-two-three-four.mp3"
+    }
+   ]
+  }
+ ]
+}

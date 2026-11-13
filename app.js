@@ -502,3 +502,24 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && Chaos.on) { Chaos
   const label = () => { b.textContent = t(FX_FORCE ? 'fx_off' : 'fx_on'); };
   label(); b.onclick = () => { try { if (FX_FORCE) localStorage.removeItem('kr-fx'); else localStorage.setItem('kr-fx', 'on'); } catch { /* egal */ } location.reload(); };
 })();
+
+// Musik: Playlist wählen, versteckte Playlist mit Code freischalten
+(() => {
+  const sel = $('pl-select'); if (!sel) return;
+  const fill = () => {
+    const cur = Chaos.plId; sel.replaceChildren();
+    const add = (v, txt) => { const o = document.createElement('option'); o.value = v; o.textContent = txt; sel.append(o); };
+    add('all', t('mus_all')); Chaos.lists().forEach((l) => add(l.id, l.name + ' (' + l.tracks.length + ')')); add('synth', t('mus_synth'));
+    sel.value = [...sel.options].some((o) => o.value === cur) ? cur : 'all';
+    $('nsfw-form').hidden = Chaos.unlocked; $('nsfw-lock').hidden = !Chaos.unlocked;
+  };
+  Chaos.onChange(fill); Chaos.preload().then(fill); fill();
+  sel.onchange = () => Chaos.setPlaylist(sel.value);
+  $('nsfw-form').onsubmit = async (e) => {
+    e.preventDefault(); const code = $('nsfw-code').value; if (!code) return;
+    if (!(window.crypto && crypto.subtle)) return msg('nsfw-msg', t('mus_nocrypto'));
+    await Chaos.preload(); const okc = await Chaos.unlock(code); $('nsfw-code').value = '';
+    msg('nsfw-msg', okc ? t('mus_ok') : t('mus_bad'), okc); if (okc) { fill(); sel.value = 'nsfw'; Chaos.setPlaylist('nsfw'); }
+  };
+  $('nsfw-lock').onclick = () => { Chaos.lock(); msg('nsfw-msg'); fill(); };
+})();

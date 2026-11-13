@@ -9,7 +9,7 @@
   host.insertBefore(cv, host.querySelector('.grain'));
   if (!gl) { fallback2d(); return; }
   const maxU = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) || 16;
-  const N = Math.max(8, Math.min(32, maxU - 8)), LIFE = 4.2, SCALE = 0.5;
+  const N = Math.max(8, Math.min(20, maxU - 8)), LIFE = 3.4, SCALE = 0.42;
   const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
   const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
@@ -55,8 +55,11 @@ void main(){
     const o = idx * 4; rip[o] = x * SCALE; rip[o + 1] = (innerHeight - y) * SCALE; rip[o + 2] = now(); rip[o + 3] = strength; idx = (idx + 1) % N; kick();
   }
   function kick() { if (!raf) raf = requestAnimationFrame(draw); }
+  let lastDraw = 0;
   function draw() {
     raf = 0; const t = now(); let live = false;
+    if (t - lastDraw < .028) { raf = requestAnimationFrame(draw); return; } // höchstens ca. 35 Bilder pro Sekunde: schont Akku und Handys
+    lastDraw = t;
     for (let i = 0; i < N; i++) if (t - rip[i * 4 + 2] < LIFE) { live = true; break; }
     glowAmt *= .94; if (glowAmt > .02) live = true;
     const chaos = document.documentElement.classList.contains('chaos');
@@ -69,10 +72,10 @@ void main(){
   function move(x, y) {
     mx = x; my = y; glowAmt = Math.min(1, glowAmt + .25);
     const dist = Math.hypot(x - lastX, y - lastY), tt = performance.now();
-    if (dist > 16 && tt - lastT > 20) { spawn(x, y, .8 + Math.min(1, dist / 80) * .7); lastX = x; lastY = y; lastT = tt; } else kick();
+    if (dist > 22 && tt - lastT > 45) { spawn(x, y, .8 + Math.min(1, dist / 80) * .7); lastX = x; lastY = y; lastT = tt; } else kick();
   }
   // Eigene Wellen, auch ohne Mauszeiger: man sieht sofort, dass das Wasser da ist
-  const amb = () => { if (!document.hidden) spawn(Math.random() * innerWidth, Math.random() * innerHeight, .9); setTimeout(amb, document.documentElement.classList.contains('chaos') ? 900 : 4500); };
+  const amb = () => { if (!document.hidden) spawn(Math.random() * innerWidth, Math.random() * innerHeight, .9); setTimeout(amb, document.documentElement.classList.contains('chaos') ? 2200 : 6000); };
   setTimeout(amb, 1200);
   cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); cv.remove(); fallback2d(); });
   addEventListener('pointermove', (e) => move(e.clientX, e.clientY), { passive: true });

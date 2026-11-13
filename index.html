@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Auf GitHub Pages gibt es keine Server-Header: CSP hier. Erlaubt nur dieselbe Seite und Supabase. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <meta name="description" content="Koffein Rechner: Trag deine Getränke ein und sieh, wie viel Koffein du heute schon hattest.">
 <meta name="theme-color" content="#0C0709">
@@ -216,8 +216,18 @@
       <h2 data-i18n="acc_title"></h2>
       <p class="sub"><span data-i18n="acc_as"></span><b id="who2"></b></p>
       <button id="logout2" class="btn ghost block" type="button"><svg class="ico"><use href="#i-logout"/></svg><span data-i18n="logout"></span></button>
+      <hr class="div">
+      <h3 data-i18n="mus_title"></h3>
+      <p class="sub" data-i18n="mus_sub"></p>
+      <div class="field"><label for="pl-select" data-i18n="mus_pl"></label><select id="pl-select"></select></div>
+      <form id="nsfw-form" autocomplete="off">
+        <div class="field"><label for="nsfw-code" data-i18n="mus_code"></label><input id="nsfw-code" type="password" maxlength="40" autocomplete="off" spellcheck="false"></div>
+        <p id="nsfw-msg" role="status"></p>
+        <button class="btn ghost block" type="submit" id="nsfw-go"><svg class="ico"><use href="#i-lock"/></svg><span data-i18n="mus_unlock"></span></button>
+      </form>
+      <button id="nsfw-lock" class="btn ghost block" type="button" hidden><svg class="ico"><use href="#i-lock"/></svg><span data-i18n="mus_lock"></span></button>
+      <hr class="div">
       <div id="fx-box" hidden>
-        <hr class="div">
         <h3 data-i18n="fx_title"></h3>
         <p class="sub" data-i18n="fx_hint"></p>
         <button id="fx-toggle" class="btn ghost block" type="button"></button>

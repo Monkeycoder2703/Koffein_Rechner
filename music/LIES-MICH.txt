@@ -1,17 +1,7 @@
-Hier kommen die Songs für den Chaos Mode rein.
-
-1) Lege die Audiodateien in diesen Ordner (mp3, ogg, m4a, wav, opus, aac).
-   Dateinamen: Buchstaben, Zahlen, Leerzeichen, - _ . ( ) erlaubt.
-2) Trage sie in playlist.json ein, zum Beispiel:
-
-   { "tracks": [
-       { "title": "Mein Song",  "file": "mein-song.mp3" },
-       { "title": "Noch einer", "file": "noch-einer.mp3" }
-   ] }
-
-Ist die Liste leer, spielt der Chaos Mode seinen eingebauten Beat.
-
-Hinweis: Auf GitHub Pages kann jeder die Dateien herunterladen. Nutze nur Musik,
-für die du die Rechte hast (selbst gemacht, Lizenz frei, z. B. Creative Commons).
-
-Optional: pro Titel "bpm" angeben, damit das Licht im Takt blitzt, z. B. {"title":"Mein Song","file":"song.mp3","bpm":128}
+Musik für den Chaos Mode
+========================
+Jeder Unterordner von "music" ist eine Playlist (Ordner "creators-choise", "rock", "techno").
+Die Liste steht in playlist.json. Neu bauen aus einem Ordner mit Unterordnern:
+   python3 tools/build_music.py <Lieder-Ordner> public/music <CODE>
+Der Ordner mit dem Namen NSFW wird dabei verschlüsselt (Ordner music/n) und erscheint auf der Seite erst,
+wenn man unter Konto > Musik den Code eingibt. Optional pro Titel in playlist.json: "bpm": 128 (Licht blitzt im Takt).
