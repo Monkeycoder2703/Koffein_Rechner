@@ -15,3 +15,11 @@
     if (el && !el.contains(e.relatedTarget)) { el.style.removeProperty('--rx'); el.style.removeProperty('--ry'); }
   }, { passive: true });
 })();
+// Beim Scrollen pausieren die Hintergrund-Animationen: das Handy hat dann alle Kraft für das flüssige Wischen
+(() => {
+  const r = document.documentElement; let tm = 0, on = false;
+  addEventListener('scroll', () => {
+    if (!on) { on = true; r.classList.add('scrolling'); }
+    clearTimeout(tm); tm = setTimeout(() => { on = false; r.classList.remove('scrolling'); }, 160);
+  }, { passive: true });
+})();

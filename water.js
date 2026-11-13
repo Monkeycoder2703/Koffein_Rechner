@@ -58,6 +58,7 @@ void main(){
   let lastDraw = 0;
   function draw() {
     raf = 0; const t = now(); let live = false;
+    if (document.documentElement.classList.contains('scrolling') && LITE) { raf = requestAnimationFrame(draw); return; }
     if (t - lastDraw < (LITE ? .04 : .028)) { raf = requestAnimationFrame(draw); return; } // höchstens ca. 35 Bilder pro Sekunde: schont Akku und Handys
     lastDraw = t;
     for (let i = 0; i < N; i++) if (t - rip[i * 4 + 2] < LIFE) { live = true; break; }
@@ -80,7 +81,7 @@ void main(){
   cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); cv.remove(); fallback2d(); });
   addEventListener('pointermove', (e) => move(e.clientX, e.clientY), { passive: true });
   // Auf dem Handy feuert pointermove nicht mehr, sobald die Seite scrollt: touchmove liefert die Spur weiter
-  addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
+  if (!LITE) addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true }); // auf dem Handy: nur Tippen, keine Spur beim Scrollen
   addEventListener('pointerdown', (e) => { lastX = e.clientX; lastY = e.clientY; spawn(e.clientX, e.clientY, 1.7); }, { passive: true });
 
   function fallback2d() { // Ohne WebGL: einfache Ringe auf einem 2D-Canvas
