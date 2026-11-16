@@ -281,7 +281,7 @@ dialog .row{display:flex;gap:var(--s3);justify-content:flex-end;flex-wrap:wrap}
 .ld-ico .ico{width:28px;height:28px}
 .ld-bar{width:100%;height:6px;margin-top:var(--s3);border-radius:var(--r);background:rgba(255,243,227,.14);overflow:hidden}
 .ld-bar i{display:block;height:100%;background:var(--honey);box-shadow:0 0 14px var(--honey);transform:scaleX(0);transform-origin:left}
-#loader.on .ld-bar i{animation:bar 3.5s linear forwards}
+#loader.on .ld-bar i{animation:bar var(--ld,3.5s) linear forwards}
 #loader.on .liquid{animation:fillUp 3.1s .35s var(--ease) forwards;transition:none}
 #loader.on .stream{animation:pourStream 3.3s .1s ease-in-out forwards}
 #loader .steam path{stroke:#FFB5D6}

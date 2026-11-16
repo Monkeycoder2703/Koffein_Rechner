@@ -262,7 +262,8 @@ function renderDrinks() {
 /* Menge: Standardportion kommt aus der Datenbank ("200 ml"). mg wird proportional umgerechnet, der Server rechnet identisch nach. */
 function portionOf(d) { const m = /^\s*(\d+)\s*(\D*)/.exec(d.portion) || []; return { base: Number(m[1]) || 0, unit: (m[2] || 'ml').trim() || 'ml' }; }
 const r25 = (x) => Math.max(5, Math.round(x / 25) * 25);
-function sizesFor(base) { return base <= 0 ? [] : base <= 60 ? [base, base * 2, base * 3] : [r25(base * .75), base, r25(base * 1.5)]; }
+const SIZES_BY = { "mcdonald's mezzo mix": [250, 400, 500] }; // Becher bei McDonald's: klein, mittel, groß
+function sizesFor(base, name) { const o = SIZES_BY[String(name || '').toLowerCase()]; if (o && o.includes(base)) return o; return base <= 0 ? [] : base <= 60 ? [base, base * 2, base * 3] : [r25(base * .75), base, r25(base * 1.5)]; }
 const mgFor = (d, amount) => { const { base } = portionOf(d); return base ? Math.round(d.mg * amount / base) : d.mg; };
 const validAmount = (v) => Number.isInteger(v) && v >= 1 && v <= 2000;
 function pick(id, focus) {
@@ -277,7 +278,7 @@ function renderSizes(animate) {
   box.hidden = !d; if (!d) return;
   const { base, unit } = portionOf(d); $('size-name').textContent = drinkName(d.name);
   grid.replaceChildren();
-  sizesFor(base).forEach((amt, i) => {
+  sizesFor(base, d.name).forEach((amt, i) => {
     const on = !state.custom && state.amount === amt;
     const b = h('button', { class: 'size-opt', type: 'button', role: 'radio', 'aria-checked': String(on) },
       h('span', { class: 'so-ico s' + i }, ico('coffee')),
@@ -302,7 +303,7 @@ function renderSizes(animate) {
 }
 function markSizes() {
   const grid = $('size-grid'), d = state.drinks.find((x) => x.id === state.selected); if (!d) return;
-  grid.querySelectorAll('button.size-opt').forEach((b, i) => b.setAttribute('aria-checked', String(!state.custom && sizesFor(portionOf(d).base)[i] === state.amount)));
+  grid.querySelectorAll('button.size-opt').forEach((b, i) => b.setAttribute('aria-checked', String(!state.custom && sizesFor(portionOf(d).base, d.name)[i] === state.amount)));
   grid.querySelector('.custom').setAttribute('aria-checked', String(state.custom));
 }
 function renderSelection() {
@@ -408,7 +409,11 @@ async function playLoader() {
   const f = nextFact(), L = $('loader');
   $('ld-fact').replaceChildren(h('span', { class: 'ld-ico' }, ico(f.i)), h('h3', { text: f.t }), h('p', { text: f.x }));
   mountCup($('ld-cup')); L.setAttribute('aria-hidden', 'false'); L.classList.add('on');
-  await sleep(3500);
+  // Anzeigedauer richtet sich nach der Länge des Spruchs (ca. 7 bis 12 Sekunden); Tippen beendet früher
+  const ms = Math.min(12000, Math.max(7000, 3500 + (f.t.length + f.x.length) * 45));
+  L.style.setProperty('--ld', ms + 'ms');
+  await Promise.race([sleep(ms), new Promise((res) => { setTimeout(() => { L.onclick = res; }, 2500); })]);
+  L.onclick = null;
   L.classList.remove('on'); L.setAttribute('aria-hidden', 'true'); await sleep(REDUCED ? 0 : 450);
 }
 
