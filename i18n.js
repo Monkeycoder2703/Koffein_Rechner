@@ -31,6 +31,8 @@ de: {
   tab_today: 'Heute', tab_board: 'Rangliste', tab_suggest: 'Vorschlag', tab_account: 'Konto', tabs_aria: 'Bereiche',
   what_drink: 'Was trinkst du?', pick_aria: 'Getränk wählen', pick_hint: 'Wähle ein Getränk.', add: 'Eintragen',
   today_h: 'Heute getrunken', count_one: 'Getränk', count_many: 'Getränke', progress_aria: 'Koffein heute',
+  clear_title: 'Koffein wieder weg', clear_free: 'Du bist koffeinfrei', clear_free_s: 'Im Körper ist praktisch nichts mehr (unter 10 mg).',
+  clear_s: 'Gerade im Körper: ca. {mg} mg · Schätzung mit 5 Stunden Halbwertszeit, bei jedem anders', clear_at: 'gegen {time} Uhr', clear_at_tm: 'morgen gegen {time} Uhr', clear_in: 'in {d}', hr: 'Std', min: 'Min',
   left_pre: 'Noch ', left_post: ' mg bis zum Tageslimit', over_pre: 'Du bist ', over_post: ' mg über dem Tageslimit',
   status0: 'Noch nichts getrunken. Die Tasse ist leer.', s25: 'Ruhiger Start. Da ist noch viel Luft.', s50: 'Gut dabei. Du bist im grünen Bereich.',
   s75: 'Über der Hälfte. Lass es langsam angehen.', s100: 'Fast am Limit. Vielleicht jetzt ein Wasser?', sover: 'Limit überschritten. Für heute ist es genug.',
@@ -88,6 +90,8 @@ en: {
   tab_today: 'Today', tab_board: 'Leaderboard', tab_suggest: 'Suggest', tab_account: 'Account', tabs_aria: 'Sections',
   what_drink: 'What are you drinking?', pick_aria: 'Choose a drink', pick_hint: 'Pick a drink.', add: 'Log it',
   today_h: 'Drunk today', count_one: 'drink', count_many: 'drinks', progress_aria: 'Caffeine today',
+  clear_title: 'Caffeine gone by', clear_free: 'You are caffeine-free', clear_free_s: 'Practically nothing left in your body (under 10 mg).',
+  clear_s: 'In your body now: about {mg} mg · estimate with a 5 hour half-life, differs for everyone', clear_at: 'around {time}', clear_at_tm: 'tomorrow around {time}', clear_in: 'in {d}', hr: 'h', min: 'min',
   left_pre: '', left_post: ' mg left until the daily limit', over_pre: 'You are ', over_post: ' mg over the daily limit',
   status0: 'Nothing yet. The cup is empty.', s25: 'Easy start. Plenty of room left.', s50: "Going well. You're in the safe zone.",
   s75: 'Past halfway. Take it slow.', s100: 'Almost at the limit. Maybe a glass of water now?', sover: "Limit exceeded. That's enough for today.",
@@ -193,7 +197,7 @@ en: [
   { i: "bulb", t: "Coffee wisdom", x: "Good ideas usually arrive between the second coffee and the shakes." }
 ]};
 // Getränkenamen kommen aus der Datenbank (deutsch). Bekannte Namen werden im englischen Modus übersetzt.
-const DRINK_EN = { 'filterkaffee': 'Filter coffee', 'latte macchiato': 'Latte macchiato', 'cold brew': 'Cold brew', 'schwarzer tee': 'Black tea', 'grüner tee': 'Green tea',
+const DRINK_EN = { 'waterdrop boost': 'Waterdrop Boost', 'filterkaffee': 'Filter coffee', 'latte macchiato': 'Latte macchiato', 'cold brew': 'Cold brew', 'schwarzer tee': 'Black tea', 'grüner tee': 'Green tea',
   'mate-tee': 'Mate tea', 'eistee': 'Iced tea', 'dunkle schokolade': 'Dark chocolate' };
 
 let LANG = 'de';

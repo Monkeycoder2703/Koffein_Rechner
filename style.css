@@ -506,3 +506,13 @@ html.lite .disco{width:52px;height:52px;top:-18px}
 html.lite.scrolling #bg *,html.lite.scrolling #fx *,html.lite.scrolling #eq i,html.lite.scrolling .ticker .tk{animation-play-state:paused!important}
 html.lite .drink,html.lite .size-opt,html.lite .panel{transition-duration:.12s}
 html.lite #bg,html.lite #fx,html.lite #eq{transform:translateZ(0)}
+
+/* Wann ist das Koffein wieder weg */
+.clear{display:flex;align-items:center;gap:var(--s3);margin-top:var(--s3);padding:var(--s3);border:1px solid var(--line);border-radius:var(--r);background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.clear[hidden]{display:none}
+.clear .ico{flex:none;width:28px;height:28px;color:var(--volt)}
+.clear>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.clear .cl-t{font-size:.8rem;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.clear .cl-v{font-size:1.1rem;font-variant-numeric:tabular-nums}
+.clear .cl-s{font-size:.82rem;color:var(--mute)}
+.clear.free .ico{color:var(--ok,#3ddc84)}

@@ -323,8 +323,27 @@ function statusFor(total) {
 async function refresh(newest) {
   const start = new Date(); start.setHours(0, 0, 0, 0);
   state.items = ok(await sb.from('intakes').select('id,name,mg,amount,ts').gte('ts', start.toISOString()).order('ts', { ascending: false }));
+  const since = new Date(Date.now() - 36 * 3600e3).toISOString(); // Koffein von gestern Abend zählt noch mit
+  state.recent = ok(await sb.from('intakes').select('mg,ts').gte('ts', since));
   renderDash(newest, true);
 }
+// Wann ist das Koffein wieder weg? Abbau halbiert alle 5 Stunden; "weg" = unter 10 mg
+const HALF_H = 5, GONE_MG = 10;
+function renderClear() {
+  const box = $('clear'); if (!box) return;
+  const list = state.recent || [], now = Date.now();
+  if (!list.length) { box.hidden = true; return; }
+  const left = list.reduce((s, i) => s + i.mg * Math.pow(.5, (now - new Date(i.ts).getTime()) / 3600e3 / HALF_H), 0);
+  box.hidden = false;
+  if (left <= GONE_MG) { $('cl-v').textContent = t('clear_free'); $('cl-s').textContent = t('clear_free_s'); box.classList.add('free'); return; }
+  box.classList.remove('free');
+  const hrs = HALF_H * Math.log2(left / GONE_MG), at = new Date(now + hrs * 3600e3), mins = Math.round(hrs * 60);
+  const d = mins >= 60 ? `${Math.floor(mins / 60)} ${t('hr')} ${mins % 60} ${t('min')}` : `${mins} ${t('min')}`;
+  const time = at.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }), tm = at.toDateString() !== new Date().toDateString();
+  $('cl-v').textContent = `${t(tm ? 'clear_at_tm' : 'clear_at', { time })} (${t('clear_in', { d })})`;
+  $('cl-s').textContent = t('clear_s', { mg: Math.round(left) });
+}
+setInterval(() => { if (state.loggedIn) renderClear(); }, 60000);
 function renderDash(newest, animate) {
   const items = state.items, total = items.reduce((s, i) => s + i.mg, 0), over = total > LIMIT, pct = Math.min(1, total / LIMIT), prev = state.total;
   if (!$('cup').firstChild) mountCup($('cup'));
@@ -338,7 +357,7 @@ function renderDash(newest, animate) {
   pill.querySelector('svg').replaceWith(ico(ic)); $('warn').textContent = text; pill.classList.toggle('over', total >= LIMIT);
   if (animate) { pill.classList.remove('pop'); void pill.offsetWidth; pill.classList.add('pop'); }
   if (animate && over && prev <= LIMIT) { $('cup').classList.remove('shake'); void $('cup').offsetWidth; $('cup').classList.add('shake'); }
-  state.total = total; updateChaosGate(total, animate);
+  state.total = total; updateChaosGate(total, animate); renderClear();
 
   $('count').textContent = items.length ? `${items.length} ${t(items.length === 1 ? 'count_one' : 'count_many')}` : '';
   const ul = $('list'); ul.replaceChildren();
