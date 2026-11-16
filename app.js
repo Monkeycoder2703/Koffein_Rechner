@@ -262,7 +262,7 @@ function renderDrinks() {
 /* Menge: Standardportion kommt aus der Datenbank ("200 ml"). mg wird proportional umgerechnet, der Server rechnet identisch nach. */
 function portionOf(d) { const m = /^\s*(\d+)\s*(\D*)/.exec(d.portion) || []; return { base: Number(m[1]) || 0, unit: (m[2] || 'ml').trim() || 'ml' }; }
 const r25 = (x) => Math.max(5, Math.round(x / 25) * 25);
-const SIZES_BY = { "mcdonald's mezzo mix": [250, 400, 500] }; // Becher bei McDonald's: klein, mittel, groß
+const SIZES_BY = { "mcdonald's mezzo mix": [250, 400, 500], "mcdonald's eistee": [250, 400, 500] }; // Becher bei McDonald's: klein, mittel, groß
 function sizesFor(base, name) { const o = SIZES_BY[String(name || '').toLowerCase()]; if (o && o.includes(base)) return o; return base <= 0 ? [] : base <= 60 ? [base, base * 2, base * 3] : [r25(base * .75), base, r25(base * 1.5)]; }
 const mgFor = (d, amount) => { const { base } = portionOf(d); return base ? Math.round(d.mg * amount / base) : d.mg; };
 const validAmount = (v) => Number.isInteger(v) && v >= 1 && v <= 2000;

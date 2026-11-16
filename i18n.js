@@ -197,7 +197,7 @@ en: [
   { i: "bulb", t: "Coffee wisdom", x: "Good ideas usually arrive between the second coffee and the shakes." }
 ]};
 // Getränkenamen kommen aus der Datenbank (deutsch). Bekannte Namen werden im englischen Modus übersetzt.
-const DRINK_EN = { "mcdonald's mezzo mix": "McDonald's Mezzo Mix", 'waterdrop boost': 'Waterdrop Boost', 'filterkaffee': 'Filter coffee', 'latte macchiato': 'Latte macchiato', 'cold brew': 'Cold brew', 'schwarzer tee': 'Black tea', 'grüner tee': 'Green tea',
+const DRINK_EN = { "mcdonald's eistee": "McDonald's iced tea", "mcdonald's mezzo mix": "McDonald's Mezzo Mix", 'waterdrop boost': 'Waterdrop Boost', 'filterkaffee': 'Filter coffee', 'latte macchiato': 'Latte macchiato', 'cold brew': 'Cold brew', 'schwarzer tee': 'Black tea', 'grüner tee': 'Green tea',
   'mate-tee': 'Mate tea', 'eistee': 'Iced tea', 'dunkle schokolade': 'Dark chocolate' };
 
 let LANG = 'de';
