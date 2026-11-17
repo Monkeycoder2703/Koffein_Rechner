@@ -9,29 +9,29 @@
   host.insertBefore(cv, host.querySelector('.grain'));
   if (!gl) { fallback2d(); return; }
   const maxU = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) || 16;
-  const N = Math.max(8, Math.min(LITE ? 12 : 20, maxU - 8)), LIFE = 3.4, SCALE = LITE ? 0.3 : 0.42;
+  const N = Math.max(8, Math.min(LITE ? 12 : 20, maxU - 8)), LIFE = 3.4, S_MAX = LITE ? 0.3 : 0.42, S_MIN = 0.14;
   const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
   const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
 #else
 precision mediump float;
 #endif
-uniform vec2 uRes;uniform float uTime;uniform vec4 uR[${N}];uniform vec3 uA;uniform vec3 uB;uniform vec3 uM;
+uniform vec2 uRes;uniform float uS;uniform float uD;uniform float uTime;uniform vec4 uR[${N}];uniform vec3 uA;uniform vec3 uB;uniform vec3 uM;
 void main(){
-  vec2 p=gl_FragCoord.xy;float h=0.;vec2 g=vec2(0.);
+  vec2 p=gl_FragCoord.xy/uS;float h=0.;vec2 g=vec2(0.); // alles in CSS-Pixeln: sieht bei jeder Auflösung gleich aus
   for(int i=0;i<${N};i++){
     vec4 r=uR[i];float age=uTime-r.z;
     if(age<0.||age>${LIFE.toFixed(1)}) continue;
-    vec2 d=p-r.xy;float dist=length(d);float x=dist-age*230.*${SCALE.toFixed(2)}*2.;
-    float s=(16.+age*14.)*${SCALE.toFixed(2)}*2.;float env=exp(-x*x/(2.*s*s))*exp(-age*.95)*r.w;
-    float k=.30/(${SCALE.toFixed(2)}*2.);float wv=sin(x*k);
-    h+=wv*env;g+=(d/(dist+.001))*(cos(x*k)*k*env-wv*x/(s*s)*env);
+    vec2 d=p-r.xy;float dist=length(d);float x=dist-age*460.;
+    float s=(16.+age*14.)*2.;float env=exp(-x*x/(2.*s*s))*exp(-age*.95)*r.w;
+    float wv=sin(x*.15);
+    h+=wv*env;g+=(d/(dist+.001))*(cos(x*.15)*.15*env-wv*x/(s*s)*env);
   }
-  vec3 n=normalize(vec3(-g*26.,1.));
-  float spec=pow(max(dot(n,normalize(vec3(.45,.6,.65))),0.),28.);
-  float fres=clamp(length(g)*9.,0.,1.);
+  vec3 n=normalize(vec3(-g*62.,1.));
+  float spec=pow(max(dot(n,normalize(vec3(.45,.6,.65))),0.),28.)*uD;
+  float fres=clamp(length(g)*21.,0.,1.)*uD;
   vec3 col=mix(uA,uB,clamp(.5+h*.9,0.,1.));
-  float glow=exp(-dot(p-uM.xy,p-uM.xy)/(2.*(110.*${SCALE.toFixed(2)}*2.)*(110.*${SCALE.toFixed(2)}*2.)))*uM.z;
+  vec2 dm=p-uM.xy;float glow=exp(-dot(dm,dm)/(2.*220.*220.))*uM.z;
   float a=clamp(abs(h)*.55+spec*.6+fres*.3+glow*.26,0.,.8);
   gl_FragColor=vec4((col*(.55+spec)+vec3(spec))*a+uA*glow*.22,a);
 }`;
@@ -42,31 +42,41 @@ void main(){
   const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
   const loc = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  const U = (n) => gl.getUniformLocation(pr, n), uRes = U('uRes'), uTime = U('uTime'), uR = U('uR'), uA = U('uA'), uB = U('uB'), uM = U('uM');
+  const U = (n) => gl.getUniformLocation(pr, n), uRes = U('uRes'), uS = U('uS'), uD = U('uD'), uTime = U('uTime'), uR = U('uR'), uA = U('uA'), uB = U('uB'), uM = U('uM');
   const rip = new Float32Array(N * 4); for (let i = 0; i < N; i++) rip[i * 4 + 2] = -100;
   let idx = 0, raf = 0, W = 1, H = 1, lastX = -999, lastY = -999, lastT = 0, mx = -999, my = -999, glowAmt = 0;
   const t0 = performance.now(), now = () => (performance.now() - t0) / 1000;
 
-  function size() { W = Math.max(2, Math.round(innerWidth * SCALE)); H = Math.max(2, Math.round(innerHeight * SCALE)); cv.width = W; cv.height = H; gl.viewport(0, 0, W, H); gl.uniform2f(uRes, W, H); }
+  let q = S_MAX, cur = S_MAX; // q = Güte (passt sich der Geschwindigkeit des Geräts an), cur = aktuell benutzte Auflösung
+  function size() { W = Math.max(2, Math.round(innerWidth * cur)); H = Math.max(2, Math.round(innerHeight * cur)); cv.width = W; cv.height = H; gl.viewport(0, 0, W, H); gl.uniform2f(uRes, W, H); gl.uniform1f(uS, W / innerWidth); }
   size(); addEventListener('resize', size);
   function hsl(h, s, l) { const f = (n) => { const k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l); return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); }; return [f(0), f(8), f(4)]; }
 
   function spawn(x, y, strength) {
-    const o = idx * 4; rip[o] = x * SCALE; rip[o + 1] = (innerHeight - y) * SCALE; rip[o + 2] = now(); rip[o + 3] = strength; idx = (idx + 1) % N; kick();
+    const o = idx * 4; rip[o] = x; rip[o + 1] = innerHeight - y; rip[o + 2] = now(); rip[o + 3] = strength; idx = (idx + 1) % N; kick();
   }
   function kick() { if (!raf) raf = requestAnimationFrame(draw); }
-  let lastDraw = 0;
+  /* Läuft auch beim Scrollen: dabei rechnet der Shader mit weniger Pixeln und etwas weniger Bildern pro Sekunde.
+     Außerdem misst die Seite selbst, ob das Gerät hinterherkommt, und senkt dann die Auflösung (bzw. erhöht sie wieder). */
+  let lastDraw = 0, acc = 0, nFr = 0, good = 0;
   function draw() {
     raf = 0; const t = now(); let live = false;
-    if (document.documentElement.classList.contains('scrolling') && LITE) { raf = requestAnimationFrame(draw); return; }
-    if (t - lastDraw < (LITE ? .04 : .028)) { raf = requestAnimationFrame(draw); return; } // höchstens ca. 35 Bilder pro Sekunde: schont Akku und Handys
-    lastDraw = t;
+    const scrolling = document.documentElement.classList.contains('scrolling');
+    const gap = scrolling ? .045 : (LITE ? .04 : .028);
+    if (t - lastDraw < gap) { raf = requestAnimationFrame(draw); return; }
+    const dt = t - lastDraw; lastDraw = t;
+    if (dt < .3) { acc += dt; nFr++; } // Pausen zwischen zwei Wellen zählen nicht
+    if (nFr >= 12) { const avg = acc / nFr; acc = 0; nFr = 0;
+      if (avg > gap * 1.8) { q = Math.max(S_MIN, q * .8); good = 0; } else if (avg < gap * 1.4 && ++good >= 4) { q = Math.min(S_MAX, q * 1.1); good = 0; } }
+    const want = Math.max(S_MIN, scrolling ? q * .65 : q);
+    if (Math.abs(want - cur) / cur > .08) { cur = want; size(); }
     for (let i = 0; i < N; i++) if (t - rip[i * 4 + 2] < LIFE) { live = true; break; }
     glowAmt *= .94; if (glowAmt > .02) live = true;
     const chaos = document.documentElement.classList.contains('chaos');
     const A = chaos ? hsl((t * .35) % 1, 1, .6) : [.12, .9, .8], B = chaos ? hsl((t * .35 + .5) % 1, 1, .65) : [1, .62, .5];
-    gl.uniform1f(uTime, t); gl.uniform4fv(uR, rip); gl.uniform3f(uA, A[0], A[1], A[2]); gl.uniform3f(uB, B[0], B[1], B[2]);
-    gl.uniform3f(uM, mx * SCALE, (innerHeight - my) * SCALE, glowAmt);
+    gl.uniform1f(uTime, t); gl.uniform1f(uD, Math.max(.2, Math.min(1, (cur - .14) / .16))); // weniger Glanzpunkte bei niedriger Auflösung: sonst wirkt es körnig
+     gl.uniform4fv(uR, rip); gl.uniform3f(uA, A[0], A[1], A[2]); gl.uniform3f(uB, B[0], B[1], B[2]);
+    gl.uniform3f(uM, mx, innerHeight - my, glowAmt);
     gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.drawArrays(gl.TRIANGLES, 0, 3);
     if (live) raf = requestAnimationFrame(draw); else { gl.clear(gl.COLOR_BUFFER_BIT); }
   }
@@ -81,7 +91,7 @@ void main(){
   cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); cv.remove(); fallback2d(); });
   addEventListener('pointermove', (e) => move(e.clientX, e.clientY), { passive: true });
   // Auf dem Handy feuert pointermove nicht mehr, sobald die Seite scrollt: touchmove liefert die Spur weiter
-  if (!LITE) addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true }); // auf dem Handy: nur Tippen, keine Spur beim Scrollen
+  addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) move(t.clientX, t.clientY); }, { passive: true });
   addEventListener('pointerdown', (e) => { lastX = e.clientX; lastY = e.clientY; spawn(e.clientX, e.clientY, 1.7); }, { passive: true });
 
   function fallback2d() { // Ohne WebGL: einfache Ringe auf einem 2D-Canvas
