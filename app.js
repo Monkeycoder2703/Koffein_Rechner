@@ -12,7 +12,8 @@ const locale = () => (LANG === 'en' ? 'en-GB' : 'de-DE');
 
 const TXT = { // Supabase-Meldungen -> eigene Texte (nichts Internes anzeigen)
   'Invalid login credentials': 'e_login', 'Email not confirmed': 'e_confirm', 'Database error saving new user': 'e_signup',
-  'Auth session missing!': 'e_session', 'New password should be different from the old password.': 'e_samepw'
+  'Auth session missing!': 'e_session', 'New password should be different from the old password.': 'e_samepw',
+  user_not_found: 'e_user_nf', self: 'e_self', already_friends: 'e_af', already_sent: 'e_as', too_many: 'e_tm', challenge_exists: 'e_ce', not_found: 'e_nf'
 };
 function ok(res) {
   if (res.error) { const m = res.error.message || ''; throw new Error(t(TXT[m] || (/rate limit|too many/i.test(m) ? 'e_rate' : 'e_generic'))); }
@@ -128,7 +129,7 @@ async function enter(user) {
   const p = ok(await sb.from('profiles').select('username').eq('id', user.id).single());
   state.username = p.username; state.unlocked = false; state.total = 0; show(true, p.username);
   $('dash').classList.add('is-loading'); $('list').replaceChildren(h('li', { class: 'sk-row' }), h('li', { class: 'sk-row' }));
-  await loadDrinks(); await refresh();
+  await loadDrinks(); await refresh(); loadFriends(true);
 }
 
 /* ---------- Tabs mit gleitendem Marker ---------- */
@@ -143,7 +144,7 @@ function select(nav, btn) { nav.querySelectorAll('[role="tab"]').forEach((x) => 
 document.querySelectorAll('#main-tabs [role="tab"]').forEach((b) => b.onclick = () => {
   select($('main-tabs'), b); state.tab = b.dataset.tab;
   document.querySelectorAll('.tab').forEach((x) => x.hidden = x.id !== 'tab-' + b.dataset.tab);
-  moveAll(); if (b.dataset.tab === 'board') loadBoard();
+  moveAll(); if (b.dataset.tab === 'board') loadBoard(); if (b.dataset.tab === 'friends') loadFriends();
 });
 document.querySelectorAll('#seg [role="tab"]').forEach((b) => b.onclick = () => { state.period = b.dataset.p; select($('seg'), b); loadBoard(); });
 
@@ -158,7 +159,7 @@ function applyAuthMode() {
 function rerender() {
   applyAuthMode(); applyStatic(); setChaosUI();
   document.querySelectorAll('[data-toggle-pw]').forEach((b) => { const shown = $(b.dataset.togglePw).type === 'text'; b.setAttribute('aria-label', t(shown ? 'hide_pw' : 'show_pw')); });
-  if (state.loggedIn) { renderDrinks(); renderDash(); if (state.tab === 'board' && state.rows) renderBoard(state.rows); requestAnimationFrame(moveAll); }
+  if (state.loggedIn) { renderDrinks(); renderDash(); if (state.tab === 'board' && state.rows) renderBoard(state.rows); if (state.friends) renderFriends(); requestAnimationFrame(moveAll); }
   Chaos.relabel();
 }
 $('lang').onclick = () => { LANG = LANG === 'de' ? 'en' : 'de'; try { localStorage.setItem('kr-lang', LANG); } catch {} rerender(); };
@@ -547,3 +548,121 @@ addEventListener('keydown', (e) => { if (e.key === 'Escape' && Chaos.on) { Chaos
   };
   $('nsfw-lock').onclick = () => { Chaos.lock(); msg('nsfw-msg'); fill(); };
 })();
+
+/* ---------- Freunde & Challenges ---------- */
+const fr = { open: new Set(), today: {}, picking: null, removing: null };
+async function loadFriends(silent) {
+  if (!state.loggedIn) return;
+  try {
+    const [f, c] = await Promise.all([sb.rpc('friends_overview'), sb.rpc('challenges_overview')]);
+    state.friends = ok(f); state.challenges = ok(c);
+  } catch (err) { if (!silent && state.tab === 'friends') $('fr-body').replaceChildren(h('div', { class: 'empty' }, h('h3', { text: t('fr_err') }), h('p', { text: err.message }), h('button', { class: 'btn ghost', type: 'button', onclick: () => loadFriends() }, h('span', { text: t('retry') })))); return; }
+  renderFriends();
+  for (const id of fr.open) loadFriendToday(id, true); // aufgeklappte Listen mit aktualisieren
+}
+function frBadge() {
+  const n = (state.friends || []).filter((x) => x.status === 'pending' && x.incoming).length + (state.challenges || []).filter((x) => x.status === 'pending' && !x.i_am_challenger).length;
+  const b = $('fr-badge'); b.hidden = !n; b.textContent = String(n);
+}
+const frAct = (btn, job, okText) => busy(btn, async () => {
+  try { await job(); if (okText) toast(t(okText)); await loadFriends(true); } catch (err) { toast(err.message, 'err'); }
+});
+const small = (cls, icon, label, onclick) => h('button', { class: 'btn sm ' + cls, type: 'button', onclick }, ico(icon), h('span', { text: label }));
+function dur(ms) { const m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} ${t('hr')} ${m % 60} ${t('min')}` : `${m} ${t('min')}`; }
+function renderFriends() {
+  frBadge();
+  const box = $('fr-body'); if (!box) return; box.replaceChildren();
+  const F = state.friends || [], C = state.challenges || [];
+  const incoming = F.filter((x) => x.status === 'pending' && x.incoming), outgoing = F.filter((x) => x.status === 'pending' && !x.incoming), friends = F.filter((x) => x.status === 'accepted');
+  // Anfragen
+  if (incoming.length || outgoing.length) {
+    const p = h('div', { class: 'panel fr' }, h('h3', { text: t('fr_req_h') }));
+    incoming.forEach((x) => p.append(h('div', { class: 'fr-row' }, h('span', { class: 'av sm', text: x.username.charAt(0) }),
+      h('div', { class: 'fr-who' }, h('b', { text: x.username }), h('small', { text: t('fr_incoming') })),
+      h('div', { class: 'fr-btns' },
+        small('', 'check', t('fr_accept'), (e) => frAct(e.currentTarget, async () => ok(await sb.rpc('friend_respond', { p_id: x.id, p_accept: true })), 'fr_now_friends')),
+        small('ghost', 'x', t('fr_decline'), (e) => frAct(e.currentTarget, async () => ok(await sb.rpc('friend_respond', { p_id: x.id, p_accept: false }))))))));
+    outgoing.forEach((x) => p.append(h('div', { class: 'fr-row' }, h('span', { class: 'av sm dim', text: x.username.charAt(0) }),
+      h('div', { class: 'fr-who' }, h('b', { text: x.username }), h('small', { text: t('fr_outgoing') })),
+      h('div', { class: 'fr-btns' }, small('ghost', 'x', t('fr_withdraw'), (e) => frAct(e.currentTarget, async () => ok(await sb.rpc('friend_remove', { p_id: x.id }))))))));
+    box.append(p);
+  }
+  // Challenges
+  if (C.length) {
+    const p = h('div', { class: 'panel fr' }, h('h3', { text: t('ch_h') }));
+    C.forEach((c) => p.append(challengeCard(c)));
+    box.append(p);
+  }
+  // Freunde
+  const lp = h('div', { class: 'panel fr' }, h('h3', { text: t('fr_list_h') }));
+  if (!friends.length) { const e = h('div', { class: 'empty flat' }, ico('users'), h('h3', { text: t('fr_empty_t') }), h('p', { text: t('fr_empty_x' ) })); e.firstChild.classList.add('art'); lp.append(e); }
+  friends.forEach((x) => lp.append(friendCard(x)));
+  box.append(lp);
+}
+function friendCard(x) {
+  const open = fr.open.has(x.id), busyCh = (state.challenges || []).some((c) => c.status === 'pending' || c.status === 'active') && (state.challenges || []).some((c) => c.other_username === x.username && (c.status === 'pending' || c.status === 'active'));
+  const pct = Math.min(100, (x.today_mg / LIMIT) * 100), bar = h('i'); bar.style.setProperty('--p', (pct / 100).toFixed(3));
+  const sub = x.today_count ? `${t('fr_today_mg', { mg: x.today_mg })} · ${x.today_count === 1 ? t('fr_cup') : t('fr_cups', { n: x.today_count })}` : t('fr_none_today');
+  const card = h('div', { class: 'fr-card' + (open ? ' open' : '') },
+    h('div', { class: 'fr-row' }, h('span', { class: 'av sm', text: x.username.charAt(0) }),
+      h('div', { class: 'fr-who' }, h('b', { text: x.username }), h('small', { text: sub }), h('span', { class: 'fb' + (x.today_mg > LIMIT ? ' over' : '') }, bar))),
+    h('div', { class: 'fr-btns wrap' },
+      small('ghost', 'eye', t(open ? 'fr_hide' : 'fr_show'), () => { if (fr.open.has(x.id)) fr.open.delete(x.id); else { fr.open.add(x.id); loadFriendToday(x.id); } renderFriends(); }),
+      small('ghost', 'flame', t('fr_challenge'), () => { fr.picking = fr.picking === x.id ? null : x.id; renderFriends(); }),
+      fr.removing === x.id
+        ? small('danger', 'trash', t('fr_remove_sure'), (e) => frAct(e.currentTarget, async () => { fr.removing = null; fr.open.delete(x.id); ok(await sb.rpc('friend_remove', { p_id: x.id })); }))
+        : small('ghost', 'trash', t('fr_remove'), () => { fr.removing = x.id; renderFriends(); setTimeout(() => { if (fr.removing === x.id) { fr.removing = null; renderFriends(); } }, 4000); })));
+  if (fr.picking === x.id) {
+    let days = 3;
+    const opts = [[1, 'ch_d1'], [3, 'ch_d3'], [7, 'ch_d7']].map(([d, k]) => h('button', { class: 'chip-opt', type: 'button', role: 'radio', 'aria-checked': String(d === days), onclick: (e) => { days = d; opts.forEach((o) => o.setAttribute('aria-checked', String(o === e.currentTarget))); } }, t(k)));
+    card.append(h('div', { class: 'fr-pick' }, h('p', { text: t('ch_pick') }), h('div', { class: 'opt-row', role: 'radiogroup' }, opts), h('small', { text: t('ch_rule') }),
+      h('div', { class: 'fr-btns' },
+        small('', 'send', t('ch_start'), (e) => frAct(e.currentTarget, async () => { ok(await sb.rpc('challenge_create', { p_friendship_id: x.id, p_days: days })); fr.picking = null; }, 'ch_sent')),
+        small('ghost', 'x', t('ch_cancel'), () => { fr.picking = null; renderFriends(); }))));
+  }
+  if (open) {
+    const list = h('ul', { class: 'fr-drinks', id: 'frd-' + x.id });
+    const rows = fr.today[x.id];
+    if (!rows) list.append(h('li', { class: 'muted', text: t('fr_loading_today') }));
+    else if (!rows.length) list.append(h('li', { class: 'muted', text: t('fr_none_today') }));
+    else rows.forEach((r) => list.append(h('li', {}, h('span', { class: 'time', text: new Date(r.ts).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }) }),
+      h('span', { text: drinkName(r.name) + (r.amount ? ` · ${r.amount} ml` : '') }), h('b', { text: r.mg + ' mg' }))));
+    card.append(list);
+  }
+  return card;
+}
+async function loadFriendToday(id, quiet) {
+  try { fr.today[id] = ok(await sb.rpc('friend_today', { p_id: id })); } catch { fr.today[id] = fr.today[id] || []; }
+  if (state.tab === 'friends' && fr.open.has(id)) { const keep = quiet; renderFriendsKeep(keep); }
+}
+function renderFriendsKeep() { const y = scrollY; renderFriends(); scrollTo(0, y); }
+function challengeCard(c) {
+  const name = c.other_username, len = c.days === 1 ? t('ch_len1') : t('ch_len', { d: c.days });
+  const head = h('div', { class: 'ch-h' }, ico('flame'), h('b', { text: t('ch_vs', { name }) }), h('span', { class: 'pill-s', text: len }));
+  const card = h('div', { class: 'ch-card ' + c.status }, head);
+  if (c.status === 'pending') {
+    if (c.i_am_challenger) card.append(h('p', { class: 'muted', text: t('ch_out', { name }) }), h('p', { class: 'muted small', text: t('ch_rule') }),
+      h('div', { class: 'fr-btns' }, small('ghost', 'x', t('fr_withdraw'), (e) => frAct(e.currentTarget, async () => ok(await sb.rpc('challenge_respond', { p_id: c.id, p_action: 'cancel' }))))));
+    else card.append(h('p', { text: t('ch_in', { name }) }), h('p', { class: 'muted small', text: t('ch_rule') }),
+      h('div', { class: 'fr-btns' },
+        small('', 'check', t('fr_accept'), (e) => frAct(e.currentTarget, async () => ok(await sb.rpc('challenge_respond', { p_id: c.id, p_action: 'accept' })), 'ch_ok_accept')),
+        small('ghost', 'x', t('fr_decline'), (e) => frAct(e.currentTarget, async () => ok(await sb.rpc('challenge_respond', { p_id: c.id, p_action: 'decline' })), 'ch_ok_decline'))));
+    return card;
+  }
+  const max = Math.max(c.my_mg, c.their_mg, 1), bar = (v, who, me) => { const i = h('i'); i.style.setProperty('--p', (v / max).toFixed(3)); return h('div', { class: 'ch-bar' + (me ? ' me' : '') }, h('span', { class: 'ch-n', text: who }), h('span', { class: 'fb' }, i), h('b', { text: v + ' mg' })); };
+  card.append(bar(c.my_mg, t('ch_you'), true), bar(c.their_mg, name, false));
+  const diff = c.my_mg - c.their_mg;
+  if (c.status === 'active') {
+    const left = new Date(c.end_at).getTime() - Date.now();
+    card.append(h('p', { class: 'ch-state' }, h('b', { text: diff === 0 ? t('ch_tie_now') : diff < 0 ? t('ch_lead_me') : t('ch_lead_them', { name }) }), ' · ', t('ch_left', { t: dur(left) })));
+  } else card.append(h('p', { class: 'ch-state ' + (diff < 0 ? 'win' : diff > 0 ? 'lose' : '') }, h('b', { text: diff === 0 ? t('ch_draw') : diff < 0 ? t('ch_won') : t('ch_lost') })));
+  return card;
+}
+$('fr-form').onsubmit = async (e) => {
+  e.preventDefault(); msg('fr-msg');
+  await busy(e.target.querySelector('button[type=submit]'), async () => {
+    try { const r = ok(await sb.rpc('friend_request', { p_username: $('fr-name').value.trim() })); $('fr-name').value = ''; toast(t(r === 'accepted' ? 'fr_now_friends' : 'fr_sent')); await loadFriends(true); }
+    catch (err) { msg('fr-msg', err.message); }
+  });
+};
+setInterval(() => { if (state.loggedIn && !document.hidden) loadFriends(true); }, 60000);
