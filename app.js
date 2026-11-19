@@ -5,7 +5,7 @@ const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANO
 
 const LIMIT = 400, UNLOCK = LIMIT / 2; // Chaos Mode ab der Hälfte des Tageslimits
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const state = { mode: 'login', period: 'day', drinks: [], selected: null, items: [], rows: null, total: 0, username: '', cupReady: false,
+const state = { mode: 'login', period: 'day', scope: 'all', drinks: [], selected: null, items: [], rows: null, total: 0, username: '', cupReady: false,
   loggedIn: false, tab: 'dash', unlocked: false, warned: false, amount: null, custom: false };
 const recovery = location.hash.includes('type=recovery'); // Link aus der "Passwort vergessen"-Mail
 const locale = () => (LANG === 'en' ? 'en-GB' : 'de-DE');
@@ -146,6 +146,7 @@ document.querySelectorAll('#main-tabs [role="tab"]').forEach((b) => b.onclick = 
   document.querySelectorAll('.tab').forEach((x) => x.hidden = x.id !== 'tab-' + b.dataset.tab);
   moveAll(); if (b.dataset.tab === 'board') loadBoard(); if (b.dataset.tab === 'friends') loadFriends();
 });
+document.querySelectorAll('#seg2 [role="tab"]').forEach((b) => b.onclick = () => { state.scope = b.dataset.s; select($('seg2'), b); loadBoard(); });
 document.querySelectorAll('#seg [role="tab"]').forEach((b) => b.onclick = () => { state.period = b.dataset.p; select($('seg'), b); loadBoard(); });
 
 /* ---------- Sprache ---------- */
@@ -460,7 +461,7 @@ async function loadBoard() {
   const box = $('board'), token = ++loadBoard.n;
   box.replaceChildren(...[0, 1, 2, 3, 4].map(() => h('div', { class: 'sk-row' })));
   let rows;
-  try { rows = ok(await sb.rpc('leaderboard', { p_period: state.period })); }
+  try { rows = ok(await sb.rpc(state.scope === 'friends' ? 'leaderboard_friends' : 'leaderboard', { p_period: state.period })); }
   catch (err) {
     if (token === loadBoard.n) box.replaceChildren(h('div', { class: 'empty' }, h('h3', { text: t('board_err') }), h('p', { text: err.message }),
       h('button', { class: 'btn ghost', type: 'button', onclick: loadBoard }, h('span', { text: t('retry') }))));
@@ -470,8 +471,43 @@ async function loadBoard() {
   state.rows = rows; renderBoard(rows);
 }
 loadBoard.n = 0;
+function tap(el, name) { // Element antippbar machen → Profil öffnen
+  el.classList.add('tappable'); el.tabIndex = 0; el.setAttribute('role', 'button'); el.setAttribute('aria-label', name);
+  el.onclick = () => openProfile(name);
+  el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openProfile(name); } };
+}
+/* ---------- Profil ---------- */
+async function openProfile(name) {
+  const dlg = $('prof-dialog'), body = $('prof-body');
+  body.replaceChildren(h('p', { class: 'muted', text: t('prof_loading') }));
+  if (!dlg.open) dlg.showModal();
+  let p;
+  try { p = ok(await sb.rpc('profile_view', { p_username: name }))[0]; if (!p) throw new Error(t('prof_err')); }
+  catch (err) { body.replaceChildren(h('h3', { id: 'prof-name', text: name }), h('p', { text: err.message || t('prof_err') })); return; }
+  const act = (btn, job, okText) => busy(btn, async () => { try { await job(); if (okText) toast(t(okText)); await loadFriends(true); await openProfile(p.username); if (state.tab === 'board' && state.scope === 'friends') loadBoard(); } catch (err) { toast(err.message, 'err'); } });
+  const d = new Date(p.since).toLocaleDateString(locale(), { year: 'numeric', month: 'long' });
+  const fav = p.fav_name
+    ? h('div', { class: 'prof-fav' }, ico('flame'), h('div', {}, h('small', { text: t('prof_fav') }), h('b', { text: drinkName(p.fav_name) }), h('small', { text: t('prof_fav_n', { n: p.fav_count }) })))
+    : h('div', { class: 'prof-fav' }, ico('flame'), h('div', {}, h('small', { text: t('prof_fav') }), h('small', { text: t('prof_fav_none') })));
+  let action;
+  if (p.rel === 'self') action = h('p', { class: 'prof-state', text: t('prof_self') });
+  else if (p.rel === 'friends') action = h('p', { class: 'prof-state ok', text: t('prof_friends') });
+  else if (p.rel === 'sent') action = h('p', { class: 'prof-state', text: t('prof_sent') });
+  else if (p.rel === 'received') action = h('div', { class: 'fr-btns' },
+    small('', 'check', t('fr_accept'), (e) => act(e.currentTarget, async () => ok(await sb.rpc('friend_respond', { p_id: p.friendship_id, p_accept: true })), 'fr_now_friends')),
+    small('ghost', 'x', t('fr_decline'), (e) => act(e.currentTarget, async () => ok(await sb.rpc('friend_respond', { p_id: p.friendship_id, p_accept: false })))));
+  else action = h('div', { class: 'fr-btns' }, small('', 'send', t('prof_send'), (e) => act(e.currentTarget, async () => ok(await sb.rpc('friend_request', { p_username: p.username })), 'prof_sent_ok')));
+  body.replaceChildren(
+    h('div', { class: 'prof-head' }, h('span', { class: 'av', text: p.username.charAt(0) }), h('div', {}, h('h3', { id: 'prof-name', text: p.username }), h('small', { class: 'muted', text: t('prof_since', { d }) }))),
+    fav, h('div', { class: 'prof-stat' }, h('b', { text: String(p.total_count) }), h('small', { text: t('prof_total') })), action);
+}
+$('prof-close').onclick = () => $('prof-dialog').close();
+$('prof-dialog').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 function renderBoard(rows) {
   const box = $('board'); box.replaceChildren();
+  if (state.scope === 'friends' && rows.length < 2 && !(state.friends || []).some((x) => x.status === 'accepted')) {
+    const e = h('div', { class: 'empty' }, ico('users'), h('h3', { text: t('board_fr_t') }), h('p', { text: t('board_fr_x') })); e.firstChild.classList.add('art'); box.append(e); return;
+  }
   if (!rows.length) {
     const e = h('div', { class: 'empty' }, ico('trophy'), h('h3', { text: t('board_empty_t') }), h('p', { text: t('board_empty_x') })); e.firstChild.classList.add('art'); box.append(e); return;
   }
@@ -481,7 +517,7 @@ function renderBoard(rows) {
     const el = h('div', { class: `pod ${names[idx]}${r.username === state.username ? ' me' : ''}` },
       idx === 0 ? h('span', { class: 'crown' }, ico('crown')) : null, h('span', { class: 'av', text: r.username.charAt(0) }),
       h('span', { class: 'nm', text: r.username }), h('span', { class: 'mgv', text: r.total + ' mg' }), h('span', { class: 'bar', text: String(idx + 1) }));
-    el.style.setProperty('--i', idx === 0 ? 2 : idx === 1 ? 1 : 0); pod.append(el);
+    el.style.setProperty('--i', idx === 0 ? 2 : idx === 1 ? 1 : 0); tap(el, r.username); pod.append(el);
   });
   box.append(pod);
   const ol = h('ol', { class: 'rank' });
@@ -490,7 +526,7 @@ function renderBoard(rows) {
     const li = h('li', { class: me ? 'me' : '' }, h('span', { class: 'n', text: String(i + 4) }),
       h('span', { class: 'who' }, h('b', { text: r.username }, me ? h('span', { class: 'badge', text: t('you') }) : null), h('span', { class: 'fb' }, fb)),
       h('span', { class: 'v', text: r.total + ' mg' }));
-    li.style.setProperty('--i', i); ol.append(li);
+    li.style.setProperty('--i', i); tap(li, r.username); ol.append(li);
   });
   if (rows.length > 3) box.append(ol);
 }
@@ -599,13 +635,14 @@ function renderFriends() {
   friends.forEach((x) => lp.append(friendCard(x)));
   box.append(lp);
 }
+const tapName = (n) => { const b = h('b', { text: n }); tap(b, n); return b; };
 function friendCard(x) {
   const open = fr.open.has(x.id), busyCh = (state.challenges || []).some((c) => c.status === 'pending' || c.status === 'active') && (state.challenges || []).some((c) => c.other_username === x.username && (c.status === 'pending' || c.status === 'active'));
   const pct = Math.min(100, (x.today_mg / LIMIT) * 100), bar = h('i'); bar.style.setProperty('--p', (pct / 100).toFixed(3));
   const sub = x.today_count ? `${t('fr_today_mg', { mg: x.today_mg })} · ${x.today_count === 1 ? t('fr_cup') : t('fr_cups', { n: x.today_count })}` : t('fr_none_today');
   const card = h('div', { class: 'fr-card' + (open ? ' open' : '') },
     h('div', { class: 'fr-row' }, h('span', { class: 'av sm', text: x.username.charAt(0) }),
-      h('div', { class: 'fr-who' }, h('b', { text: x.username }), h('small', { text: sub }), h('span', { class: 'fb' + (x.today_mg > LIMIT ? ' over' : '') }, bar))),
+      h('div', { class: 'fr-who' }, tapName(x.username), h('small', { text: sub }), h('span', { class: 'fb' + (x.today_mg > LIMIT ? ' over' : '') }, bar))),
     h('div', { class: 'fr-btns wrap' },
       small('ghost', 'eye', t(open ? 'fr_hide' : 'fr_show'), () => { if (fr.open.has(x.id)) fr.open.delete(x.id); else { fr.open.add(x.id); loadFriendToday(x.id); } renderFriends(); }),
       small('ghost', 'flame', t('fr_challenge'), () => { fr.picking = fr.picking === x.id ? null : x.id; renderFriends(); }),

@@ -17,7 +17,7 @@
 <meta name="apple-mobile-web-app-title" content="Koffein">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="style.css?v=20261119a">
+<link rel="stylesheet" href="style.css?v=20261119b">
 </head>
 <body class="booting">
 
@@ -200,6 +200,12 @@
       <button role="tab" aria-selected="false" data-p="week" type="button" data-i18n="p_week"></button>
       <button role="tab" aria-selected="false" data-p="month" type="button" data-i18n="p_month"></button>
     </div>
+    <div class="tabs seg" id="seg2" role="tablist" data-i18n-aria="scope_aria">
+      <span class="tab-ind" aria-hidden="true"></span>
+      <button role="tab" aria-selected="true" data-s="all" type="button" data-i18n="scope_all"></button>
+      <button role="tab" aria-selected="false" data-s="friends" type="button" data-i18n="scope_friends"></button>
+    </div>
+    <p class="board-tip" data-i18n="board_tip"></p>
     <div id="board"></div>
   </section>
 
@@ -260,6 +266,11 @@
   </section>
 </main>
 
+<dialog id="prof-dialog" aria-labelledby="prof-name">
+  <div id="prof-body"></div>
+  <div class="row"><button class="btn ghost" type="button" id="prof-close"><span data-i18n="prof_close"></span></button></div>
+</dialog>
+
 <dialog id="del-dialog" aria-labelledby="del-title">
   <form id="del-form" method="dialog">
     <h3 id="del-title" data-i18n="dlg_title"></h3>
@@ -304,12 +315,12 @@
 <div id="eq" aria-hidden="true"></div>
 
 <script src="supabase.js"></script>
-<script src="config.js?v=20261119a"></script>
-<script src="i18n.js?v=20261119a"></script>
-<script src="chaos.js?v=20261119a"></script>
-<script src="water.js?v=20261119a"></script>
-<script src="ui.js?v=20261119a"></script>
-<script src="pwa.js?v=20261119a"></script>
-<script src="app.js?v=20261119a"></script>
+<script src="config.js?v=20261119b"></script>
+<script src="i18n.js?v=20261119b"></script>
+<script src="chaos.js?v=20261119b"></script>
+<script src="water.js?v=20261119b"></script>
+<script src="ui.js?v=20261119b"></script>
+<script src="pwa.js?v=20261119b"></script>
+<script src="app.js?v=20261119b"></script>
 </body>
 </html>
