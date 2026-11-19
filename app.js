@@ -523,7 +523,7 @@ function renderBoard(rows) {
   const ol = h('ol', { class: 'rank' });
   rows.slice(3).forEach((r, i) => {
     const me = r.username === state.username, fb = h('i'); fb.style.setProperty('--p', (r.total / max).toFixed(3));
-    const li = h('li', { class: me ? 'me' : '' }, h('span', { class: 'n', text: String(i + 4) }),
+    const li = h('li', { class: me ? 'me' : '' }, h('span', { class: 'n', text: String(i + 4) }), h('span', { class: 'av xs', text: r.username.charAt(0) }),
       h('span', { class: 'who' }, h('b', { text: r.username }, me ? h('span', { class: 'badge', text: t('you') }) : null), h('span', { class: 'fb' }, fb)),
       h('span', { class: 'v', text: r.total + ' mg' }));
     li.style.setProperty('--i', i); tap(li, r.username); ol.append(li);
