@@ -617,3 +617,5 @@ html.lite #bg,html.lite #fx,html.lite #eq{transform:translateZ(0)}
 .rank .fb{height:5px}
 .board-tip{margin:var(--s4) 0 0}
 @media (max-width:560px){.rank li{grid-template-columns:1.3rem 2rem 1fr auto;gap:var(--s2);padding:var(--s3) var(--s2)}.av.xs{width:2rem;height:2rem}}
+
+.ch-warn{color:var(--danger);font-weight:700;font-size:.9rem;margin:var(--s2) 0 0}

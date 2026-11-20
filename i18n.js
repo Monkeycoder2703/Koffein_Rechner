@@ -65,8 +65,8 @@ de: {
   fr_today_mg: '{mg} mg heute', fr_cups: '{n} Getränke', fr_cup: '1 Getränk', fr_none_today: 'Heute noch nichts getrunken', fr_show: 'Heute ansehen', fr_hide: 'Zuklappen', fr_challenge: 'Herausfordern', fr_remove: 'Entfernen', fr_remove_sure: 'Wirklich entfernen?',
   fr_err: 'Konnte die Freunde nicht laden.', fr_loading_today: 'Lädt…',
   ch_h: 'Challenges', ch_pick: 'Wie lange soll die Challenge laufen?', ch_d1: '1 Tag', ch_d3: '3 Tage', ch_d7: '7 Tage', ch_start: 'Challenge senden', ch_cancel: 'Abbrechen',
-  ch_rule: 'Wer in dieser Zeit weniger Koffein trinkt, gewinnt.', ch_sent: 'Challenge gesendet.', ch_in: '{name} fordert dich heraus', ch_out: 'Wartet auf {name}', ch_vs: 'Du gegen {name}',
-  ch_len: '{d} Tage', ch_len1: '1 Tag', ch_left: 'noch {t}', ch_lead_me: 'Du führst', ch_lead_them: '{name} führt', ch_tie_now: 'Gleichstand', ch_won: 'Gewonnen!', ch_lost: 'Verloren', ch_draw: 'Unentschieden', ch_you: 'Du',
+  ch_rule: 'Wer in dieser Zeit mehr Koffein trinkt, gewinnt – aber nur, wenn er an keinem Tag über das Limit von 400 mg kommt. Wer drüber geht, hat verloren.', ch_sent: 'Challenge gesendet.', ch_in: '{name} fordert dich heraus', ch_out: 'Wartet auf {name}', ch_vs: 'Du gegen {name}',
+  ch_over_me: 'Du bist über dem Limit – du kannst nicht mehr gewinnen.', ch_over_them: '{name} ist über dem Limit.', ch_both_out: 'Beide über dem Limit', ch_len: '{d} Tage', ch_len1: '1 Tag', ch_left: 'noch {t}', ch_lead_me: 'Du führst', ch_lead_them: '{name} führt', ch_tie_now: 'Gleichstand', ch_won: 'Gewonnen!', ch_lost: 'Verloren', ch_draw: 'Unentschieden', ch_you: 'Du',
   ch_active: 'läuft', ch_over: 'beendet', ch_ok_accept: 'Challenge läuft. Viel Erfolg!', ch_ok_decline: 'Abgelehnt.',
   e_user_nf: 'Diesen Benutzernamen gibt es nicht.', e_self: 'Das bist du selbst.', e_af: 'Ihr seid schon befreundet.', e_as: 'Du hast schon eine Anfrage geschickt.', e_tm: 'Du hast schon sehr viele Freunde und Anfragen.', e_ce: 'Mit dieser Person läuft schon eine Challenge.', e_nf: 'Das gibt es nicht mehr. Lade die Seite neu.',
   e_samepw: 'Das neue Passwort muss sich vom alten unterscheiden.', e_rate: 'Gerade zu viele Anfragen. Warte kurz und versuch es dann nochmal.',
@@ -138,8 +138,8 @@ en: {
   fr_today_mg: '{mg} mg today', fr_cups: '{n} drinks', fr_cup: '1 drink', fr_none_today: 'Nothing to drink yet today', fr_show: 'See today', fr_hide: 'Collapse', fr_challenge: 'Challenge', fr_remove: 'Remove', fr_remove_sure: 'Really remove?',
   fr_err: "Couldn't load your friends.", fr_loading_today: 'Loading…',
   ch_h: 'Challenges', ch_pick: 'How long should the challenge run?', ch_d1: '1 day', ch_d3: '3 days', ch_d7: '7 days', ch_start: 'Send challenge', ch_cancel: 'Cancel',
-  ch_rule: 'Whoever drinks less caffeine in that time wins.', ch_sent: 'Challenge sent.', ch_in: '{name} challenges you', ch_out: 'Waiting for {name}', ch_vs: 'You vs. {name}',
-  ch_len: '{d} days', ch_len1: '1 day', ch_left: '{t} left', ch_lead_me: 'You lead', ch_lead_them: '{name} leads', ch_tie_now: 'Tied', ch_won: 'You won!', ch_lost: 'You lost', ch_draw: 'Draw', ch_you: 'You',
+  ch_rule: 'Whoever drinks more caffeine in that time wins – but only if they never go over the 400 mg limit on any day. Going over means losing.', ch_sent: 'Challenge sent.', ch_in: '{name} challenges you', ch_out: 'Waiting for {name}', ch_vs: 'You vs. {name}',
+  ch_over_me: 'You went over the limit – you can no longer win.', ch_over_them: '{name} went over the limit.', ch_both_out: 'Both over the limit', ch_len: '{d} days', ch_len1: '1 day', ch_left: '{t} left', ch_lead_me: 'You lead', ch_lead_them: '{name} leads', ch_tie_now: 'Tied', ch_won: 'You won!', ch_lost: 'You lost', ch_draw: 'Draw', ch_you: 'You',
   ch_active: 'running', ch_over: 'finished', ch_ok_accept: 'Challenge is on. Good luck!', ch_ok_decline: 'Declined.',
   e_user_nf: "That username doesn't exist.", e_self: "That's you.", e_af: 'You are already friends.', e_as: 'You already sent a request.', e_tm: 'You already have a lot of friends and requests.', e_ce: 'There is already a challenge with this person.', e_nf: 'That no longer exists. Reload the page.',
   e_samepw: 'The new password must differ from the old one.', e_rate: 'Too many requests right now. Wait a moment and try again.',
@@ -225,7 +225,7 @@ en: [
   { i: "bulb", t: "Coffee wisdom", x: "Good ideas usually arrive between the second coffee and the shakes." }
 ]};
 // Getränkenamen kommen aus der Datenbank (deutsch). Bekannte Namen werden im englischen Modus übersetzt.
-const DRINK_EN = { "mcdonald's eistee": "McDonald's iced tea", "mcdonald's mezzo mix": "McDonald's Mezzo Mix", 'waterdrop boost': 'Waterdrop Boost', 'filterkaffee': 'Filter coffee', 'latte macchiato': 'Latte macchiato', 'cold brew': 'Cold brew', 'schwarzer tee': 'Black tea', 'grüner tee': 'Green tea',
+const DRINK_EN = { "mcdonald's eistee": "McDonald's iced tea", "mcdonald's mezzo mix": "McDonald's Mezzo Mix", 'waterdrop boost': 'Waterdrop Boost', 'paulaner spezi': 'Paulaner Spezi', 'filterkaffee': 'Filter coffee', 'latte macchiato': 'Latte macchiato', 'cold brew': 'Cold brew', 'schwarzer tee': 'Black tea', 'grüner tee': 'Green tea',
   'mate-tee': 'Mate tea', 'eistee': 'Iced tea', 'dunkle schokolade': 'Dark chocolate' };
 
 let LANG = 'de';

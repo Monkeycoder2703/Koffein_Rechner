@@ -688,11 +688,16 @@ function challengeCard(c) {
   }
   const max = Math.max(c.my_mg, c.their_mg, 1), bar = (v, who, me) => { const i = h('i'); i.style.setProperty('--p', (v / max).toFixed(3)); return h('div', { class: 'ch-bar' + (me ? ' me' : '') }, h('span', { class: 'ch-n', text: who }), h('span', { class: 'fb' }, i), h('b', { text: v + ' mg' })); };
   card.append(bar(c.my_mg, t('ch_you'), true), bar(c.their_mg, name, false));
-  const diff = c.my_mg - c.their_mg;
+  // Regel: Wer mehr trinkt, gewinnt – aber nur, solange er an keinem Tag über das Limit kommt
+  const diff = c.their_mg - c.my_mg; // >0: ich führe
+  let res; // 'me' | 'them' | 'tie' | 'none' (beide über dem Limit)
+  if (c.my_over && c.their_over) res = 'none'; else if (c.my_over) res = 'them'; else if (c.their_over) res = 'me'; else res = diff < 0 ? 'them' : diff > 0 ? 'me' : 'tie';
+  if (c.my_over) card.append(h('p', { class: 'ch-warn', text: t('ch_over_me') }));
+  if (c.their_over) card.append(h('p', { class: 'ch-warn', text: t('ch_over_them', { name }) }));
   if (c.status === 'active') {
     const left = new Date(c.end_at).getTime() - Date.now();
-    card.append(h('p', { class: 'ch-state' }, h('b', { text: diff === 0 ? t('ch_tie_now') : diff < 0 ? t('ch_lead_me') : t('ch_lead_them', { name }) }), ' · ', t('ch_left', { t: dur(left) })));
-  } else card.append(h('p', { class: 'ch-state ' + (diff < 0 ? 'win' : diff > 0 ? 'lose' : '') }, h('b', { text: diff === 0 ? t('ch_draw') : diff < 0 ? t('ch_won') : t('ch_lost') })));
+    card.append(h('p', { class: 'ch-state' }, h('b', { text: res === 'none' ? t('ch_both_out') : res === 'tie' ? t('ch_tie_now') : res === 'me' ? t('ch_lead_me') : t('ch_lead_them', { name }) }), ' · ', t('ch_left', { t: dur(left) })));
+  } else card.append(h('p', { class: 'ch-state ' + (res === 'me' ? 'win' : res === 'them' ? 'lose' : '') }, h('b', { text: res === 'none' ? t('ch_both_out') : res === 'tie' ? t('ch_draw') : res === 'me' ? t('ch_won') : t('ch_lost') })));
   return card;
 }
 $('fr-form').onsubmit = async (e) => {
